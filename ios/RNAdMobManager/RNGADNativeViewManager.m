@@ -11,7 +11,9 @@
 + (NSString *)  EVENT_AD_IMPRESSION {return @"onAdImpression";}
 + (NSString *)  EVENT_AD_LOADED{return @"onAdLoaded";}
 + (NSString *)  EVENT_AD_LEFT_APPLICATION {return @"onAdLeftApplication";}
-+ (NSString *)  EVENT_UNIFIED_NATIVE_AD_LOADED {return@ "onUnifiedNativeAdLoaded";}
++ (NSString *)  EVENT_UNIFIED_NATIVE_AD_LOADED {return @"onUnifiedNativeAdLoaded";}
++ (NSString *)  EVENT_NATIVE_AD_LOADED {return @"onNativeAdLoaded";}
++ (NSString *)  EVENT_CUSTOM_FORMAT_AD_LOADED {return @"onCustomFormatAdLoaded";}
 
 RCT_EXPORT_MODULE(RNGADNativeView);
 
@@ -19,7 +21,6 @@ RCT_EXPORT_MODULE(RNGADNativeView);
 {
     return [[RNGADNativeView alloc]initWithBridge:self.bridge];
 }
-
 
 
 RCT_EXPORT_METHOD(loadAd:(nonnull NSNumber *)reactTag)
@@ -34,6 +35,17 @@ RCT_EXPORT_METHOD(loadAd:(nonnull NSNumber *)reactTag)
   }];
 }
 
+RCT_EXPORT_METHOD(triggerClick:(nonnull NSNumber *)reactTag)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNGADNativeView *> *viewRegistry) {
+      RNGADNativeView *view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[RNGADNativeView class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting RNGADNativeView, got: %@", view);
+    } else {
+      [view triggerClick];
+    }
+  }];
+}
 
 RCT_EXPORT_VIEW_PROPERTY(adSize, NSString)
 RCT_EXPORT_VIEW_PROPERTY(testDevices, NSArray)
@@ -42,6 +54,7 @@ RCT_EXPORT_VIEW_PROPERTY(targetingOptions, NSDictionary)
 RCT_EXPORT_VIEW_PROPERTY(mediationOptions, NSDictionary)
 RCT_EXPORT_VIEW_PROPERTY(videoOptions, NSDictionary)
 RCT_EXPORT_VIEW_PROPERTY(mediaAspectRatio, NSNumber)
+RCT_EXPORT_VIEW_PROPERTY(customTemplateIds, NSArray)
 
 RCT_EXPORT_VIEW_PROPERTY(refreshInterval, NSNumber)
 RCT_EXPORT_VIEW_PROPERTY(adUnitID, NSString)
@@ -70,7 +83,6 @@ RCT_EXPORT_VIEW_PROPERTY(onAdLeftApplication, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onAdClicked, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onAdImpression, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onNativeAdLoaded, RCTDirectEventBlock)
-
-
+RCT_EXPORT_VIEW_PROPERTY(onCustomFormatAdLoaded, RCTDirectEventBlock)
 
 @end

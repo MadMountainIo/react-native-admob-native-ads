@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { NativeAdContext } from "./context";
 const CallToActionView = ({
@@ -73,6 +73,7 @@ const CallToActionView = ({
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     justifyContent: "center",
     alignItems: "center",
   },

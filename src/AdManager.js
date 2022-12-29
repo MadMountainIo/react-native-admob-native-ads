@@ -13,7 +13,7 @@ async function isTestDevice() {
 
 function registerRepository(config) {
   config.mediaAspectRatio = AdOptions.mediaAspectRatio[config.mediaAspectRatio || "unknown"];
-  config.adChoicesPlacement = AdOptions.adChoicesPlacement[config.adChoicesPlacement || "topRight"];
+  config.adChoicesPlacement = AdOptions.adChoicesPlacement[config.adChoicesPlacement || "topLeft"];
   return RNAdmobNativeAdsManager.registerRepository(config);
 }
 

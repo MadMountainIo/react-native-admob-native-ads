@@ -1,5 +1,6 @@
 package com.ammarahmed.rnadmob.nativeads;
 
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -8,21 +9,20 @@ import androidx.annotation.NonNull;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableNativeArray;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
 
 public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView> {
-
-
     public static final String REACT_CLASS = "RNGADNativeView";
-
     public static final String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
     public static final String EVENT_AD_CLICKED = "onAdClicked";
     public static final String EVENT_AD_CLOSED = "onAdClosed";
@@ -31,6 +31,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     public static final String EVENT_AD_LOADED = "onAdLoaded";
     public static final String EVENT_AD_LEFT_APPLICATION = "onAdLeftApplication";
     public static final String EVENT_NATIVE_AD_LOADED = "onNativeAdLoaded";
+    public static final String EVENT_CUSTOM_FORMAT_AD_LOADED = "onCustomFormatAdLoaded";
     public static final String PROP_DELAY_AD_LOAD = "delayAdLoad";
     public static final String PROP_TEST_DEVICES = "testDevices";
     public static final String PROP_AD_UNIT_ID = "adUnitID";
@@ -53,7 +54,12 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     public static final String PROP_MEDIATION_OPTIONS = "mediationOptions";
     public static final String PROP_TARGETING_OPTIONS = "targetingOptions";
     public static final String PROP_AD_REPOSITORY = "repository";
-
+    public static final String PROP_CUSTOM_TEMPLATE_IDS = "customTemplateIds";
+    public static final String AD_TYPE_NATIVE = "native";
+    public static final String AD_TYPE_TEMPLATE = "template";
+    public static final int COMMAND_LOAD_AD = 1;
+    public static final int COMMAND_RECORD_IMPRESSION = 2;
+    public static final int COMMAND_TRIGGER_CLICK = 3;
 
     @javax.annotation.Nullable
     @Override
@@ -68,6 +74,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
                 EVENT_AD_LOADED,
                 EVENT_AD_LEFT_APPLICATION,
                 EVENT_NATIVE_AD_LOADED,
+                EVENT_CUSTOM_FORMAT_AD_LOADED,
         };
         for (String event : events) {
             builder.put(event, MapBuilder.of("registrationName", event));
@@ -84,14 +91,57 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     protected RNAdmobNativeView createViewInstance(ThemedReactContext reactContext) {
 
         return new RNAdmobNativeView(reactContext);
-
     }
 
 
     @Override
     public void addView(RNAdmobNativeView parent, View child, int index) {
         parent.addNewView(child, index);
+    }
 
+    @Override
+    public @Nullable
+    Map<String, Integer> getCommandsMap() {
+        return MapBuilder.<String, Integer>builder()
+                .put("loadAd", COMMAND_LOAD_AD)
+                .put("recordImpression", COMMAND_RECORD_IMPRESSION)
+                .put("triggerClick", COMMAND_TRIGGER_CLICK)
+                .build();
+    }
+
+
+    @Override
+    public void receiveCommand(RNAdmobNativeView nativeAdWrapper, int commandId, @Nullable ReadableArray args) {
+        switch (commandId) {
+            case COMMAND_LOAD_AD:
+                nativeAdWrapper.loadAd();
+                break;
+            case COMMAND_RECORD_IMPRESSION:
+                nativeAdWrapper.recordImpression();
+                break;
+            case COMMAND_TRIGGER_CLICK:
+                nativeAdWrapper.triggerClick();
+                break;
+        }
+    }
+
+    @Override
+    public void onDropViewInstance(@NonNull RNAdmobNativeView nativeAdWrapper) {
+        super.onDropViewInstance(nativeAdWrapper);
+        nativeAdWrapper.removeHandler();
+
+        CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(), nativeAdWrapper.adListener);
+
+        if (nativeAdWrapper.nativeAd != null) {
+            if (nativeAdWrapper.unifiedNativeAdContainer != null) {
+                nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
+            } else {
+                nativeAdWrapper.nativeAdView.destroy();
+            }
+        }
+        if (nativeAdWrapper.nativeAdView != null) {
+            nativeAdWrapper.nativeAdView.destroy();
+        }
     }
 
 
@@ -112,20 +162,15 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
 
     @ReactProp(name = PROP_NON_PERSONALIZED_ADS, defaultBoolean = false)
     public void setPropNonPersonalizedAds(final RNAdmobNativeView nativeAdWrapper, final boolean npa) {
-
         nativeAdWrapper.setRequestNonPersonalizedAdsOnly(npa);
     }
 
 
-
     @ReactProp(name = PROP_AD_CHOICES_PLACEMENT)
     public void setPropAdChoicesPlacement(final RNAdmobNativeView nativeAdWrapper, final int location) {
-
         nativeAdWrapper.setAdChoicesPlacement(location);
 
     }
-
-
 
 
     @ReactProp(name = PROP_MEDIA_ASPECT_RATIO)
@@ -134,11 +179,8 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     }
 
 
-
-
     @ReactProp(name = PROP_MEDIA_VIEW)
     public void setMediaView(final RNAdmobNativeView nativeAdWrapper, final int id) {
-
         nativeAdWrapper.addMediaView(id);
         nativeAdWrapper.setNativeAd();
     }
@@ -146,7 +188,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     @ReactProp(name = PROP_HEADLINE_VIEW)
     public void setHeadlineView(final RNAdmobNativeView nativeAdWrapper, final int id) {
 
-        TextView view = (TextView)nativeAdWrapper.findViewById(id);
+        TextView view = (TextView) nativeAdWrapper.findViewById(id);
         nativeAdWrapper.nativeAdView.setHeadlineView(view);
         nativeAdWrapper.setNativeAd();
     }
@@ -154,7 +196,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     @ReactProp(name = PROP_TAGLINE_VIEW)
     public void setPropTaglineView(final RNAdmobNativeView nativeAdWrapper, final int id) {
 
-        TextView view = (TextView)nativeAdWrapper.findViewById(id);
+        TextView view = (TextView) nativeAdWrapper.findViewById(id);
         nativeAdWrapper.nativeAdView.setBodyView(view);
         nativeAdWrapper.setNativeAd();
     }
@@ -162,7 +204,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     @ReactProp(name = PROP_ADVERTISER_VIEW)
     public void setPropAdvertiserView(final RNAdmobNativeView nativeAdWrapper, final int id) {
 
-        TextView view = (TextView)nativeAdWrapper.findViewById(id);
+        TextView view = (TextView) nativeAdWrapper.findViewById(id);
         nativeAdWrapper.nativeAdView.setAdvertiserView(view);
         nativeAdWrapper.setNativeAd();
     }
@@ -218,32 +260,19 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
 
     }
 
-    public static final int COMMAND_LOAD_AD = 1;
-
-    @Override
-    public @Nullable
-    Map<String, Integer> getCommandsMap() {
-        return MapBuilder.<String, Integer>builder()
-                .put("loadAd", COMMAND_LOAD_AD)
-                .build();
+    @ReactProp(name = PROP_CUSTOM_TEMPLATE_IDS)
+    public void setPropCustomTemplateIds(final RNAdmobNativeView nativeAdWrapper, final ReadableArray customTemplateIdsString) {
+        ReadableNativeArray nativeArray = (ReadableNativeArray) customTemplateIdsString;
+        ArrayList<Object> list = nativeArray.toArrayList();
+        String[] customTemplateIdsStringArray = list.toArray(new String[list.size()]);
+        nativeAdWrapper.setCustomTemplateIds(customTemplateIdsStringArray);
     }
-
-
-    @Override
-    public void receiveCommand(RNAdmobNativeView nativeAdWrapper, int commandId, @Nullable ReadableArray args) {
-        switch (commandId) {
-            case COMMAND_LOAD_AD:
-                nativeAdWrapper.loadAd();
-                break;
-        }
-    }
-
 
     @ReactProp(name = PROP_AD_UNIT_ID)
     public void setPropAdUnitId(final RNAdmobNativeView nativeAdWrapper, final String adUnitId) {
+        Log.d("RNAdmobNativeView", "Ad unit " + adUnitId);
         if (adUnitId == null) return;
         nativeAdWrapper.setAdUnitId(adUnitId);
-
     }
 
     @ReactProp(name = PROP_AD_REPOSITORY)
@@ -256,25 +285,4 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     public void setRefreshInterval(final RNAdmobNativeView nativeAdWrapper, final int interval) {
         nativeAdWrapper.setAdRefreshInterval(interval);
     }
-
-    @Override
-    public void onDropViewInstance(@NonNull RNAdmobNativeView nativeAdWrapper) {
-        super.onDropViewInstance(nativeAdWrapper);
-        nativeAdWrapper.removeHandler();
-
-        CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(),nativeAdWrapper.adListener);
-
-        if (nativeAdWrapper.nativeAd != null){
-            if (nativeAdWrapper.unifiedNativeAdContainer != null){
-                nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
-            } else{
-                nativeAdWrapper.nativeAdView.destroy();
-            }
-        }
-        if (nativeAdWrapper.nativeAdView != null){
-            nativeAdWrapper.nativeAdView.destroy();
-        }
-    }
-
-
 }

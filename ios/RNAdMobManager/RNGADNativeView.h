@@ -4,11 +4,18 @@
 
 @import GoogleMobileAds;
 #import "AdListener.h"
-@interface RNGADNativeView : GADNativeAdView <AdListener,GADNativeAdLoaderDelegate,
-GADNativeAdDelegate>
+@interface RNGADNativeView : GADNativeAdView <
+    AdListener,
+    GADNativeAdLoaderDelegate,
+    GADNativeAdDelegate,
+    GADCustomNativeAdLoaderDelegate,
+    GADCustomNativeAdDelegate
+>
 
 @property(nonatomic, strong) GADNativeAdView *nativeAdView;
 @property(nonatomic, strong) GADAdLoader *adLoader;
+@property(nonatomic, strong) GADCustomNativeAd *nativeCustomTemplateAd;
+
 
 @property (nonatomic, copy) NSArray *testDevices;
 @property (nonatomic, copy) NSNumber *refreshInterval;
@@ -32,10 +39,12 @@ GADNativeAdDelegate>
 @property (nonatomic, copy) NSDictionary *mediationOptions;
 @property (nonatomic, copy) NSDictionary *targetingOptions;
 @property (nonatomic, copy) NSDictionary *videoOptions;
+@property (nonatomic, copy) NSArray *customTemplateIds;
 
 - (instancetype)initWithBridge:(RCTBridge *)bridge;
 
 - (void)loadAd;
+- (void)triggerClick;
 
 @property (nonatomic, copy) RCTDirectEventBlock onAdLoaded;
 @property (nonatomic, copy) RCTDirectEventBlock onAdFailedToLoad;
@@ -45,6 +54,7 @@ GADNativeAdDelegate>
 @property (nonatomic, copy) RCTDirectEventBlock onAdClicked;
 @property (nonatomic, copy) RCTDirectEventBlock onAdImpression;
 @property (nonatomic, copy) RCTDirectEventBlock onNativeAdLoaded;
+@property (nonatomic, copy) RCTDirectEventBlock onCustomFormatAdLoaded;
 
 @property (nonatomic, assign) BOOL isLoading;
 
