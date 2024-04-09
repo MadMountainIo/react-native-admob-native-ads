@@ -73,78 +73,13 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
     Logger('AD', 'LEFT', 'Ad left application');
   };
 
-  const onViewableItemsChanged = useCallback(
-    event => {
-      /**
-       * [STEP IV] We check if any AdViews are currently viewable.
-       */
-      let viewableAds = event.viewableItems.filter(
-        i => i.key.indexOf('ad') !== -1,
-      );
-
-      viewableAds.forEach(adView => {
-        if (adView.index === index && !loaded) {
-          /**
-           * [STEP V] If the ad is viewable and not loaded
-           * already, we will load the ad.
-           */
-          setLoading(true);
-          setLoaded(false);
-          setError(false);
-          Logger('AD', 'IN VIEW', 'Loading ' + index);
-          nativeAdRef.current?.loadAd();
-        } else {
-          /**
-           * We will not reload ads or load
-           * ads that are not viewable currently
-           * to save bandwidth and requests sent
-           * to server.
-           */
-          if (loaded) {
-            Logger('AD', 'IN VIEW', 'Loaded ' + index);
-          } else {
-            Logger('AD', 'NOT IN VIEW', index);
-          }
-        }
-      });
-    },
-    [index, loaded],
-  );
-
   useEffect(() => {
-    /**
-     * for previous steps go to List.js file.
-     *
-     * [STEP III] We will subscribe to onViewableItemsChanged event in all AdViews in the List.
-     */
-    let onViewableItemsChangedHandler;
-    
-    if (!loadOnMount) {
-     onViewableItemsChangedHandler = DeviceEventEmitter.addListener(
-        Events.onViewableItemsChanged,
-        onViewableItemsChanged,
-      );
-    }
-
-    return () => {
-      if (!loadOnMount) {
-        onViewableItemsChangedHandler.remove();
-      }
-    };
-  }, [index, loadOnMount, loaded, onViewableItemsChanged]);
-
-  useEffect(() => {
-    if (loadOnMount || index <= 15) {
-      setLoading(true);
-      setLoaded(false);
-      setError(false);
+    if (!loaded) {
       nativeAdRef.current?.loadAd();
+    } else {
+      Logger('AD', 'LOADED ALREADY');
     }
-    return () => {
-      setLoaded(false);
-    };
-  }, [loadOnMount, index]);
-
+  }, [loaded]);
   return (
     <NativeAdView
       ref={nativeAdRef}
@@ -156,22 +91,22 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
       onNativeAdLoaded={onNativeAdLoaded}
       refreshInterval={60000 * 2}
       style={{
-        width: '98%',
+        width: '100%',
         alignSelf: 'center',
-        backgroundColor: 'transparent',
       }}
       videoOptions={{
         customControlsRequested: true,
       }}
+      mediationOptions={{
+        nativeBanner: true,
+      }}
       // adUnitID={type === 'image' ? adUnitIDs.image : adUnitIDs.video} // REPLACE WITH NATIVE_AD_VIDEO_ID for video ads.
-      repository={type === 'image' ? 'imageAd' : 'videoAd'}
-    >
+      repository={type === 'image' ? 'imageAd' : 'videoAd'}>
       <View
         style={{
           width: '100%',
           alignItems: 'center',
-        }}
-      >
+        }}>
         <View
           style={{
             width: '100%',
@@ -182,9 +117,8 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
             alignItems: 'center',
             opacity: !loading && !error && loaded ? 0 : 1,
             zIndex: !loading && !error && loaded ? 0 : 10,
-          }}
-        >
-          {loading && <ActivityIndicator size={28} color="#a9a9a9" />}
+          }}>
+          {!loading && <ActivityIndicator size={28} color="#a9a9a9" />}
           {error && <Text style={{color: '#a9a9a9'}}>:-(</Text>}
         </View>
 
@@ -193,12 +127,11 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
             height: 100,
             width: '100%',
             flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             paddingHorizontal: 10,
             opacity: loading || error || !loaded ? 0 : 1,
-          }}
-        >
+            maxWidth: '100%',
+          }}>
           <IconView
             style={{
               width: 60,
@@ -207,22 +140,22 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
           />
           <View
             style={{
-              flexGrow:1,
-              flexShrink:1,
               paddingHorizontal: 6,
-            }}
-          >
+              flexShrink: 1,
+            }}>
             <HeadlineView
               hello="abc"
               style={{
                 fontWeight: 'bold',
                 fontSize: 13,
+                color: 'black',
               }}
             />
             <TaglineView
               numberOfLines={2}
               style={{
                 fontSize: 11,
+                color: 'black',
               }}
             />
             <AdvertiserView
@@ -236,11 +169,11 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-              }}
-            >
+              }}>
               <StoreView
                 style={{
                   fontSize: 12,
+                  color: 'black',
                 }}
               />
               <StarRatingView
@@ -282,7 +215,7 @@ export const AdView = React.memo(({index, media, type, loadOnMount = true}) => {
               fontSize: 13,
               flexWrap: 'wrap',
               textAlign: 'center',
-              color:'white'
+              color: 'white',
             }}
           />
         </View>

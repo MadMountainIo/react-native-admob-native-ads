@@ -1,5 +1,12 @@
-import React from 'react';
-import { ViewStyle, TextProps, ImageProps, TextStyle, StyleProp } from 'react-native';
+import React from "react";
+import {
+  ViewStyle,
+  TextProps,
+  ImageProps,
+  TextStyle,
+  StyleProp,
+  EmitterSubscription,
+} from "react-native";
 
 type CustomFormatImage = {
     width: number;
@@ -123,15 +130,15 @@ type AdManagerConfiguration = {
 };
 
 type VideoOptions = {
-    /** Sets if the video should be muted by default when played automatically */
-    muted?: boolean;
-    /** Allow the ad to expand to full screen on click */
-    clickToExpand?: boolean;
-    /** Set this to true if you want to use custom controls for play/pause etc on videos */
-    customControlsRequested?: boolean;
+  /** Sets if the video should be muted by default when played automatically */
+  muted?: boolean;
+  /** Allow the ad to expand to full screen on click */
+  clickToExpand?: boolean;
+  /** Set this to true if you want to use custom controls for play/pause etc on videos */
+  customControlsRequested?: boolean;
 };
 type MediationOptions = {
-    nativeBanner?: boolean;
+  nativeBanner?: boolean;
 };
 
 type TargetingOptions = {
@@ -156,37 +163,37 @@ type MediationAdapterStatus = {
 };
 
 type AdRepositoryConfig = {
-    /** Name for this repository. If name is not provided, adUnitId will
-     *  be used as repository name.
-     */
-    name?: string;
-    /** **(Required)** Provide adUnitId to load ads. */
-    adUnitId: string;
-    /**The number of ads to preload. Default is `5` */
-    numOfAds?: number;
-    /**
-     * Under the Google EU User Consent Policy, you must make certain disclosures
-     * to your users in the European Economic Area (EEA) and obtain their consent
-     * to use cookies or other local storage, where legally required, and to use
-     * personal data (such as AdID) to serve ads. This policy reflects the requirements
-     * of the EU ePrivacy Directive and the General Data Protection Regulation (GDPR).
-     *
-     * You can use library such as: https://github.com/birgernass/react-native-ad-consent
-     * to obtain the consent or if you are using rn-firebase you can obtain the consent from
-     * there and then pass the consent to this library. If user has selected
-     * non-personalized-ads then pass `true` and non-personalized ads will be shown to the user.
-     *
-     */
-    requestNonPersonalizedAdsOnly?: boolean;
-    /** After how long should ads in this repository expire after being loaded in milliseconds. Default is `3600000`.*/
-    expirationPeriod?: number;
-    /** Set this to true if you are using mediation. */
-    mediationEnabled?: boolean;
-    videoOptions?: VideoOptions;
-    mediationOptions?: MediationOptions;
-    targetingOptions?: TargetingOptions;
-    adChoicesPlacement?: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
-    mediaAspectRatio?: 'any' | 'landscape' | 'portrait' | 'square' | 'unknown';
+  /** Name for this repository. If name is not provided, adUnitId will
+   *  be used as repository name.
+   */
+  name?: string;
+  /** **(Required)** Provide adUnitId to load ads. */
+  adUnitId: string;
+  /**The number of ads to preload. Default is `5` */
+  numOfAds?: number;
+  /**
+   * Under the Google EU User Consent Policy, you must make certain disclosures
+   * to your users in the European Economic Area (EEA) and obtain their consent
+   * to use cookies or other local storage, where legally required, and to use
+   * personal data (such as AdID) to serve ads. This policy reflects the requirements
+   * of the EU ePrivacy Directive and the General Data Protection Regulation (GDPR).
+   *
+   * You can use library such as: https://github.com/birgernass/react-native-ad-consent
+   * to obtain the consent or if you are using rn-firebase you can obtain the consent from
+   * there and then pass the consent to this library. If user has selected
+   * non-personalized-ads then pass `true` and non-personalized ads will be shown to the user.
+   *
+   */
+  requestNonPersonalizedAdsOnly?: boolean;
+  /** After how long should ads in this repository expire after being loaded in milliseconds. Default is `3600000`.*/
+  expirationPeriod?: number;
+  /** Set this to true if you are using mediation. */
+  mediationEnabled?: boolean;
+  videoOptions?: VideoOptions;
+  mediationOptions?: MediationOptions;
+  targetingOptions?: TargetingOptions;
+  adChoicesPlacement?: "topLeft" | "topRight" | "bottomLeft" | "bottomRight";
+  mediaAspectRatio?: "any" | "landscape" | "portrait" | "square" | "unknown";
 };
 
 type ImagePropsWithOptionalSource = Omit<ImageProps, 'source'> &
@@ -223,14 +230,14 @@ type NativeAdViewProps = {
      */
     mediaAspectRatio?: 'any' | 'landscape' | 'portrait' | 'square' | 'unknown';
 
-    /**
-     * A repository is used to preload ads before they are presented.
-     * Provide the name of the repository registered for ad caching.
-     * If you have not registered a repository, you can do so by
-     * calling `AdManager.registerRepository`.
-     *
-     * **Note:** Use this only if you have registered a repository.
-     */
+  /**
+   * A repository is used to preload ads before they are presented.
+   * Provide the name of the repository registered for ad caching.
+   * If you have not registered a repository, you can do so by
+   * calling `AdManager.registerRepository`.
+   *
+   * **Note:** Use this only if you have registered a repository.
+   */
 
     repository?: string;
 
@@ -302,39 +309,61 @@ type NestedTextProps = {
     allowFontScaling?: boolean;
 };
 
-type StarViewProps = {
-    style?: StyleProp<ViewStyle>;
-    size?: number;
-    iconSet?:
-        | 'Entypo'
-        | 'EvilIcons'
-        | 'Feather'
-        | 'FontAwesome'
-        | 'Foundation'
-        | 'Ionicons'
-        | 'MaterialIcons'
-        | 'MaterialCommunityIcons'
-        | 'Octicons'
-        | 'Zocial'
-        | 'SimpleLineIcons';
-    fullIcon?: string;
-    halfIcon?: string;
-    emptyIcon?: string;
-    fullIconColor?: string;
-    halfIconColor?: string;
-    emptyIconColor?: string;
+type CallToActionViewProps = NestedTextProps & {
+  buttonAndroidStyle?: {
+    /**
+     * Only 6 digit hex colors are supported. Example: #f0f0f0
+     */
+    backgroundColor?: string;
+    /**
+     * Only 6 digit hex colors are supported. Example: #f0f0f0
+     */
+    borderColor?: string;
+    borderWidth?: number;
+    borderRadius?: number;
+  };
 };
 
-declare module '@external/react-native-admob-native-ads' {
-    /**
-     *
-     * Wrapper for the UnifiedNativeAdView from Google Ads SDK. All your views should be
-     * wrapped inside this view always.
-     *
-     */
+type StarViewProps = {
+  style?: StyleProp<ViewStyle>;
+  size?: number;
+  iconSet?:
+    | "Entypo"
+    | "EvilIcons"
+    | "Feather"
+    | "FontAwesome"
+    | "Foundation"
+    | "Ionicons"
+    | "MaterialIcons"
+    | "MaterialCommunityIcons"
+    | "Octicons"
+    | "Zocial"
+    | "SimpleLineIcons";
+  fullIcon?: string;
+  halfIcon?: string;
+  emptyIcon?: string;
+  fullIconColor?: string;
+  halfIconColor?: string;
+  emptyIconColor?: string;
+};
 
-    export default class NativeAdView extends React.Component<NativeAdViewProps> {}
+declare module "react-native-admob-native-ads" {
+  /**
+   *
+   * Wrapper for the UnifiedNativeAdView from Google Ads SDK. All your views should be
+   * wrapped inside this view always.
+   *
+   */
 
+  export default class NativeAdView extends React.Component<NativeAdViewProps> {
+    loadAd: () => void;
+  }
+
+  /**
+   * AdManager can be used to configure your ads on App Startup such as setting test devices.
+   *
+   */
+  export const AdManager: {
     /**
      * AdManager can be used to configure your ads on App Startup such as setting test devices.
      *
@@ -366,10 +395,10 @@ declare module '@external/react-native-admob-native-ads' {
      *
      */
 
-        setRequestConfiguration: (
-            config: Partial<AdManagerConfiguration>,
-        ) => Promise<Array<MediationAdapterStatus>>;
-        /**
+    setRequestConfiguration: (
+      config: Partial<AdManagerConfiguration>
+    ) => Promise<Array<MediationAdapterStatus>>;
+    /**
      * Check if the current device is registered as a test device to show test ads.
 
      ```js
@@ -377,7 +406,7 @@ declare module '@external/react-native-admob-native-ads' {
      ```
      return: `boolean`
      */
-        isTestDevice: () => Promise<boolean>;
+    isTestDevice: () => Promise<boolean>;
 
         /**
          * Register a repository  with given settings for native ads
@@ -436,7 +465,30 @@ declare module '@external/react-native-admob-native-ads' {
      * Many times, the ad recieved will be from the Google Playstore or AppStore for iOS.
      * In that case, you can show the store name using this view.
      */
-    export function StoreView(props: TextProps): JSX.Element;
+    hasAd: (name: string) => Promise<boolean>;
+    /**
+     * When using Repositories to load ads, events are not recieved on the ad itself
+     * on android. If you want to track clicks and impressions you can do this using below
+     * events for each repository on android.
+     *
+     * Android only.
+     * @param repo
+     * @param eventName
+     * @param listener
+     * @returns
+     */
+    subscribe: (
+      repo: string,
+      eventName:
+        | "onAdPreloadLoaded"
+        | "onAdPreloadError"
+        | "onAdPreloadOpen"
+        | "onAdPreloadClosed"
+        | "onAdPreloadClicked"
+        | "onAdPreloadImpression",
+      listener
+    ) => EmitterSubscription;
+  };
 
     /**
      * If you want to explicitly show only Images and no video etc, use ImageView.
@@ -447,28 +499,11 @@ declare module '@external/react-native-admob-native-ads' {
      */
     export function IconView(props: ImagePropsWithOptionalSource): JSX.Element;
 
-    /**
-     * If the ad has images or video content. It will be loaded inside the MediaView.
-     */
-    export function NativeMediaView(props: {
-        style?: StyleProp<ViewStyle>;
-        onVideoStart?: () => void;
-        onVideoEnd?: () => void;
-        onVideoPause?: () => void;
-        onVideoPlay?: () => void;
-        onVideoProgress?: (progress: { duration: string; currentTime: string }) => void;
-        onVideoMute?: (muted: boolean) => void;
-        paused?: boolean;
-        muted?: boolean;
-    }): JSX.Element;
 
-    /**
-     * A simple button to open the adveriser website or store page etc. It is a simple
-     * Text Component wrapped in a View. I dont know how to make the Touchables or Buttons
-     * work since they have no effect. Native side does not recieve the call hence simple
-     * Text Component is used to receive the clicks.
-     */
-    export function CallToActionView(props: NestedTextProps): JSX.Element;
+  /**
+   * Ad Badge shows the {ad} badge on top of the ad telling the user that this is an AD.
+   *
+   */
 
     /**
      * A Star Rating View to show the star rating for the app ads that you might recieve from
@@ -487,6 +522,66 @@ declare module '@external/react-native-admob-native-ads' {
      * Developer must care so that below properties and methods match NativeAdView actual properties and methods
      */
 
+  /**
+   *  * The adveriser name of the native ad recieved from server is renderd here.
+   */
+  export function AdvertiserView(props: TextProps): JSX.Element;
+  /**
+   * If the ad or service is paid,then this view can be used to show the price.
+   */
+  export function PriceView(props: TextProps): JSX.Element;
+
+  /**
+   * Many times, the ad recieved will be from the Google Playstore or AppStore for iOS.
+   * In that case, you can show the store name using this view.
+   */
+  export function StoreView(props: TextProps): JSX.Element;
+
+  /**
+   * If you want to explicitly show only Images and no video etc, use ImageView.
+   */
+  export function ImageView(props: ImagePropsWithOptionalSource): JSX.Element;
+  /**
+   * Icon/Logo of the adveriser shown inside this view
+   */
+  export function IconView(props: ImagePropsWithOptionalSource): JSX.Element;
+
+  /**
+   * If the ad has images or video content. It will be loaded inside the MediaView.
+   */
+  export function NativeMediaView(props: {
+    style?: StyleProp<ViewStyle>;
+    onVideoStart?: () => void;
+    onVideoEnd?: () => void;
+    onVideoPause?: () => void;
+    onVideoPlay?: () => void;
+    onVideoProgress?: (progress: {
+      duration: string;
+      currentTime: string;
+    }) => void;
+    onVideoMute?: (muted: boolean) => void;
+    paused?: boolean;
+    muted?: boolean;
+  }): JSX.Element;
+
+  /**
+   * A simple button to open the adveriser website or store page etc. It is a simple
+   * Text Component wrapped in a View. I dont know how to make the Touchables or Buttons
+   * work since they have no effect. Native side does not recieve the call hence simple
+   * Text Component is used to receive the clicks.
+   */
+  export function CallToActionView(props: CallToActionViewProps): JSX.Element;
+
+  /**
+   * A Star Rating View to show the star rating for the app ads that you might recieve from
+   * the server.
+   */
+  export function StarRatingView(props: StarViewProps): JSX.Element;
+
+  export const TestIds: {
+    Video: string;
+    Image: string;
+  };
     export interface NativeAdComponent {
         ad: NativeAd | CustomFormatAd;
         triggerClick: () => void;
