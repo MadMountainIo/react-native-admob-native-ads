@@ -296,6 +296,7 @@ type NativeAdViewProps = {
     onNativeAdLoaded?: (event: NativeAd) => void;
     onCustomFormatAdLoaded?: (event: CustomFormatAd) => void;
     onAdFailedToLoad?: (error: { message: string }) => void;
+    onAdCustomClick?: (event: CustomFormatAd) => void;
 };
 
 type SimpleViewProps = {
@@ -568,10 +569,10 @@ declare module "react-native-admob-native-ads" {
     Video: string;
     Image: string;
   };
-    export interface NativeAdComponent {
-        ad: NativeAd | CustomFormatAd;
-        triggerClick: () => void;
-        recordImpression: () => void;
-        loadAd: () => void;
-    }
+
+export interface NativeAdComponent {
+    ad: NativeAd | CustomFormatAd;
+    triggerClick: () => void;
+    recordImpression: () => void;
+    loadAd: () => void;
 }
