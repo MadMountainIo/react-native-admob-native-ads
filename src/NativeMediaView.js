@@ -37,11 +37,11 @@ const NativeMediaView = (props) => {
                 clearInterval(timers[nodeHandle]);
                 return;
             }
-            UIManager.dispatchViewManagerCommand(
-                findNodeHandle(adMediaView.current),
-                UIManager.getViewManagerConfig('RNGADMediaView').Commands.getProgress,
-                undefined
-            );
+            // UIManager.dispatchViewManagerCommand(
+            //     findNodeHandle(adMediaView.current),
+            //     UIManager.getViewManagerConfig('RNGADMediaView').Commands.getProgress,
+            //     undefined
+            // );
         }, 1000);
     };
 
