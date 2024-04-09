@@ -12,12 +12,6 @@ import { defaultAd, NativeAdContext } from "./context";
 import { AdOptions } from "./utils";
 import Wrapper from "./Wrapper";
 
-import { defaultAd, NativeAdContext } from './context';
-
-import { AdOptions } from './utils';
-
-import Wrapper from './Wrapper';
-
 const testNativeAd = {
     headline: 'Test Ad: Lorem ipsum dolor ',
     tagline:
@@ -77,23 +71,15 @@ export class NativeAdView extends Component {
       this.ad.aspectRatio = parseFloat(this.ad.aspectRatio);
     }
     if (this.componentMounted) {
-      this.updateAd();
-      if (this.props.onUnifiedNativeAdLoaded) {
-        this.props.onUnifiedNativeAdLoaded(this.ad);
-        console.warn(
-          "[DEPRECATED] onUnifiedNativeAdLoaded is deprecated and will be removed in future versions. Use onNativeAdLoaded instead."
-        );
-      }
-      if (this.componentMounted) {
-          this.updateAd();
-          if (this.props.onUnifiedNativeAdLoaded) {
-              this.props.onUnifiedNativeAdLoaded(this.ad);
-              console.warn('[DEPRECATED] onUnifiedNativeAdLoaded is deprecated and will be removed in future versions. Use onNativeAdLoaded instead.');
-          }
-          if (this.props.onNativeAdLoaded) {
-              this.props.onNativeAdLoaded(this.ad);
-          }
-      }
+        this.updateAd();
+        if (this.props.onUnifiedNativeAdLoaded) {
+            this.props.onUnifiedNativeAdLoaded(this.ad);
+            console.warn('[DEPRECATED] onUnifiedNativeAdLoaded is deprecated and will be removed in future versions. Use onNativeAdLoaded instead.');
+        }
+        if (this.props.onNativeAdLoaded) {
+            this.props.onNativeAdLoaded(this.ad);
+        }
+    }
   };
 
   onCustomFormatAdLoaded = (event) => {

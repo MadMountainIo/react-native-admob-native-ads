@@ -124,26 +124,6 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
         }
     }
 
-    @Override
-    public void onDropViewInstance(@NonNull RNAdmobNativeView nativeAdWrapper) {
-        super.onDropViewInstance(nativeAdWrapper);
-        nativeAdWrapper.removeHandler();
-
-        CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(), nativeAdWrapper.adListener);
-
-        if (nativeAdWrapper.nativeAd != null) {
-            if (nativeAdWrapper.unifiedNativeAdContainer != null) {
-                nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
-            } else {
-                nativeAdWrapper.nativeAdView.destroy();
-            }
-        }
-        if (nativeAdWrapper.nativeAdView != null) {
-            nativeAdWrapper.nativeAdView.destroy();
-        }
-    }
-
-
     @ReactProp(name = PROP_TARGETING_OPTIONS)
     public void setPropTargetingOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
         nativeAdWrapper.setTargetingOptions(options);
