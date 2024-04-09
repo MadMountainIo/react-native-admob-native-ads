@@ -164,31 +164,31 @@ export class NativeAdView extends Component {
     return (
       <NativeAdContext.Provider value={{ nativeAd, nativeAdView }}>
         <RNGADNativeView
-          ref={this._getRef}
-          adUnitID={this.props.adUnitID}
-          repository={this.props.repository}
-          onAdLoaded={this._onAdLoaded}
-          onAdFailedToLoad={this._onAdFailedToLoad}
-          onAdClicked={this._onAdClicked}
-          onAdLeftApplication={this._onAdLefApplication}
-          onAdOpened={this._onAdOpened}
-          onAdClosed={this._onAdClosed}
-          onAdImpression={this._onAdImpression}
-          style={this.props.style}
-          mediaAspectRatio={
-            AdOptions.mediaAspectRatio[this.props.mediaAspectRatio]
-          }
-          onNativeAdLoaded={this.onNativeAdLoaded}
-          requestNonPersonalizedAdsOnly={
-            this.props.requestNonPersonalizedAdsOnly
-          }
-          videoOptions={this.props.videoOptions}
-          mediationOptions={this.props.mediationOptions}
-          targetingOptions={this.props.targetingOptions}
-          adChoicesPlacement={
-            AdOptions.adChoicesPlacement[this.props.adChoicesPlacement]
-          }
-        >
+              ref={this._getRef}
+              adUnitID={this.props.adUnitID}
+              customTemplateIds={this.props.customTemplateIds}
+              repository={this.props.repository}
+              onAdLoaded={this._onAdLoaded}
+              onAdFailedToLoad={this._onAdFailedToLoad}
+              onAdClicked={this._onAdClicked}
+              onAdLeftApplication={this._onAdLefApplication}
+              onAdOpened={this._onAdOpened}
+              onAdClosed={this._onAdClosed}
+              onAdImpression={this._onAdImpression}
+              style={this.props.style}
+              mediaAspectRatio={
+                  AdOptions.mediaAspectRatio[this.props.mediaAspectRatio]
+              }
+              onNativeAdLoaded={this.onNativeAdLoaded}
+              onCustomFormatAdLoaded={this.onCustomFormatAdLoaded}
+              requestNonPersonalizedAdsOnly={
+                  this.props.requestNonPersonalizedAdsOnly
+              }
+              videoOptions={this.props.videoOptions}
+              mediationOptions={this.props.mediationOptions}
+              targetingOptions={this.props.targetingOptions}
+              adChoicesPlacement={AdOptions.adChoicesPlacement[this.props.adChoicesPlacement]}
+          >
           <Wrapper
             onLayout={(event) => {
               this.setState({
