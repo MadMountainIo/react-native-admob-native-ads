@@ -13,11 +13,6 @@
 
 RCT_EXPORT_MODULE();
 
-RCT_EXPORT_METHOD(isTestDevice:resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject){
-
-}
-
 RCT_EXPORT_METHOD(registerRepository:(NSDictionary *)config resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject){
 
@@ -67,12 +62,12 @@ RCT_EXPORT_METHOD(setRequestConfiguration:(NSDictionary *)config resolver:(RCTPr
 
     if ([[config allKeys] containsObject:@"tagForChildDirectedTreatment"]) {
         NSNumber *tag = [config valueForKey:@"tagForChildDirectedTreatment"];
-        [[[GADMobileAds sharedInstance] requestConfiguration] tagForChildDirectedTreatment:tag.boolValue];
+        [[[GADMobileAds sharedInstance] requestConfiguration] setTagForChildDirectedTreatment:[NSNumber numberWithBool:tag.boolValue]];
     };
 
     if ([[config allKeys] containsObject:@"tagForUnderAgeConsent"]) {
         NSNumber *tagC = [config valueForKey:@"tagForUnderAgeConsent"];
-        [[[GADMobileAds sharedInstance] requestConfiguration] tagForUnderAgeOfConsent:tagC.boolValue];
+        [[[GADMobileAds sharedInstance] requestConfiguration] setTagForChildDirectedTreatment:[NSNumber numberWithBool:tagC.boolValue]];
     };
 
     if ([[config allKeys] containsObject:@"testDeviceIds"]) {
