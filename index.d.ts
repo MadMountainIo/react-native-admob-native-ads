@@ -348,7 +348,7 @@ type StarViewProps = {
   emptyIconColor?: string;
 };
 
-declare module "react-native-admob-native-ads" {
+declare module "@external/react-native-admob-native-ads" {
   /**
    *
    * Wrapper for the UnifiedNativeAdView from Google Ads SDK. All your views should be
@@ -476,7 +476,6 @@ declare module "react-native-admob-native-ads" {
         | "onAdPreloadImpression",
       listener
     ) => EmitterSubscription;
-  };
 
     /**
      * If you want to explicitly show only Images and no video etc, use ImageView.
@@ -570,9 +569,10 @@ declare module "react-native-admob-native-ads" {
     Image: string;
   };
 
-export interface NativeAdComponent {
-    ad: NativeAd | CustomFormatAd;
-    triggerClick: () => void;
-    recordImpression: () => void;
-    loadAd: () => void;
-}
+  export interface NativeAdComponent {
+      ad: NativeAd | CustomFormatAd;
+      triggerClick: () => void;
+      recordImpression: () => void;
+      loadAd: () => void;
+  }
+};
