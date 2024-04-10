@@ -79,6 +79,7 @@ public class Utils {
     }
 
     public static void setMediaAspectRatio(int type, NativeAdOptions.Builder adOptions) {
+
         adOptions.setMediaAspectRatio(type);
     }
 

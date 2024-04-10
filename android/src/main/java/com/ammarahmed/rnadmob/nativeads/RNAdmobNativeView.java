@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -394,6 +395,7 @@ public class RNAdmobNativeView extends LinearLayout {
                 if (adListener != null)
                     adListener.onAdFailedToLoad(new LoadAdError(3, "The requested repo is not registered", "", null, null));
             } else {
+                CacheManager.instance.attachAdListener(adRepo, adListener);
                 if (CacheManager.instance.numberOfAds(adRepo) != 0) {
                     unifiedNativeAdContainer = CacheManager.instance.getNativeAd(adRepo);
 
@@ -409,10 +411,7 @@ public class RNAdmobNativeView extends LinearLayout {
                     }
                 } else {
                     if (!CacheManager.instance.isLoading(adRepo)) {
-                        CacheManager.instance.attachAdListener(adRepo, adListener);
                         CacheManager.instance.requestAds(adRepo);
-                    } else {
-                        CacheManager.instance.attachAdListener(adRepo, adListener);
                     }
                 }
             }
@@ -449,16 +448,33 @@ public class RNAdmobNativeView extends LinearLayout {
     public void setAdUnitId(String id) {
         admobAdUnitId = id;
 
-        if (customTemplateIds == null) return;
+        if (customTemplateIds == null) {
+            return;
+        }
+        // We replace loadAdBuilder() with checkAndInitializeAdBuilder() to be sure its called after both adUnitId and customTemplateIds is set.
+        // In rn < 0.72 it is setCustomTemplateIds -> setAdUnitId, but in 0.72 it is reversed (?).
+        //  loadAdBuilder(); 
 
-        loadAdBuilder();
+        // In case when adUnitIt is set after customTemplateIds
+        checkAndInitializeAdBuilder();
     }
-
 
     public void setCustomTemplateIds(String[] ids) {
         customTemplateIds = ids;
 
-        if (admobAdUnitId.isEmpty()) return;
+        if (admobAdUnitId.isEmpty()) {
+            return;
+        }
+
+        // In case when customTemplateIds is set after adUnitIt
+        checkAndInitializeAdBuilder();
+    }
+
+    // It combines both setAdUnitId and setCustomTemplateIds requirements, and if all is set then it tries to load ad.
+    private void checkAndInitializeAdBuilder() {
+        if (admobAdUnitId != null && !admobAdUnitId.isEmpty() && customTemplateIds != null && customTemplateIds.length > 0) {
+            loadAdBuilder();
+        }
     }
 
     public void loadAdBuilder() {
@@ -525,10 +541,6 @@ public class RNAdmobNativeView extends LinearLayout {
 
     public void setTargetingOptions(ReadableMap options) {
         Utils.setTargetingOptions(options, adRequest);
-    }
-
-    public void setMediationOptions(ReadableMap options) {
-        Utils.setMediationOptions(options, adRequest);
     }
 
     @Override

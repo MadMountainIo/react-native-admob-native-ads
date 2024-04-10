@@ -43,9 +43,9 @@ export class NativeAdView extends Component {
     }
 
   _onAdFailedToLoad = (event) => {
-      if (this.props.onAdFailedToLoad) {
-          this.props.onAdFailedToLoad(event.nativeEvent);
-      }
+    if (this.props.onAdFailedToLoad) {
+      this.props.onAdFailedToLoad(event.nativeEvent?.error);
+    }
   };
 
   _onAdLoaded = (event) => {
@@ -160,47 +160,47 @@ export class NativeAdView extends Component {
   };
 
   render() {
-      const { nativeAd, nativeAdView } = this.state;
-      return (
-          <NativeAdContext.Provider value={{ nativeAd, nativeAdView }}>
-              <RNGADNativeView
-                  ref={this._getRef}
-                  adUnitID={this.props.adUnitID}
-                  customTemplateIds={this.props.customTemplateIds}
-                  repository={this.props.repository}
-                  onAdLoaded={this._onAdLoaded}
-                  onAdFailedToLoad={this._onAdFailedToLoad}
-                  onAdClicked={this._onAdClicked}
-                  onAdLeftApplication={this._onAdLefApplication}
-                  onAdOpened={this._onAdOpened}
-                  onAdClosed={this._onAdClosed}
-                  onAdImpression={this._onAdImpression}
-                  style={this.props.style}
-                  mediaAspectRatio={
-                      AdOptions.mediaAspectRatio[this.props.mediaAspectRatio]
-                  }
-                  onNativeAdLoaded={this.onNativeAdLoaded}
-                  onCustomFormatAdLoaded={this.onCustomFormatAdLoaded}
-                  requestNonPersonalizedAdsOnly={
-                      this.props.requestNonPersonalizedAdsOnly
-                  }
-                  videoOptions={this.props.videoOptions}
-                  mediationOptions={this.props.mediationOptions}
-                  targetingOptions={this.props.targetingOptions}
-                  adChoicesPlacement={AdOptions.adChoicesPlacement[this.props.adChoicesPlacement]}
-              >
-                  <Wrapper
-                      onLayout={() => {
-                          this.setState({
-                              nativeAdView: this.nativeAdRef,
-                          });
-                      }}
-                  >
-                      {this.props.children}
-                  </Wrapper>
-              </RNGADNativeView>
-          </NativeAdContext.Provider>
-      );
+    const { nativeAd, nativeAdView } = this.state;
+    return (
+      <NativeAdContext.Provider value={{ nativeAd, nativeAdView }}>
+        <RNGADNativeView
+              ref={this._getRef}
+              adUnitID={this.props.adUnitID}
+              customTemplateIds={this.props.customTemplateIds}
+              repository={this.props.repository}
+              onAdLoaded={this._onAdLoaded}
+              onAdFailedToLoad={this._onAdFailedToLoad}
+              onAdClicked={this._onAdClicked}
+              onAdLeftApplication={this._onAdLefApplication}
+              onAdOpened={this._onAdOpened}
+              onAdClosed={this._onAdClosed}
+              onAdImpression={this._onAdImpression}
+              style={this.props.style}
+              mediaAspectRatio={
+                  AdOptions.mediaAspectRatio[this.props.mediaAspectRatio]
+              }
+              onNativeAdLoaded={this.onNativeAdLoaded}
+              onCustomFormatAdLoaded={this.onCustomFormatAdLoaded}
+              requestNonPersonalizedAdsOnly={
+                  this.props.requestNonPersonalizedAdsOnly
+              }
+              videoOptions={this.props.videoOptions}
+              mediationOptions={this.props.mediationOptions}
+              targetingOptions={this.props.targetingOptions}
+              adChoicesPlacement={AdOptions.adChoicesPlacement[this.props.adChoicesPlacement]}
+          >
+          <Wrapper
+            onLayout={(event) => {
+              this.setState({
+                nativeAdView: this.nativeAdRef,
+              });
+            }}
+          >
+            {this.props.children}
+          </Wrapper>
+        </RNGADNativeView>
+      </NativeAdContext.Provider>
+    );
   }
 }
 
@@ -219,8 +219,6 @@ NativeAdView.defaultProps = {
 
 NativeAdView.simulatorId = 'SIMULATOR';
 
-const RNGADNativeView = requireNativeComponent(
-    'RNGADNativeView'
-);
+const RNGADNativeView = requireNativeComponent("RNGADNativeView");
 
 export default NativeAdView;

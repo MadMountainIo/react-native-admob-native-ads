@@ -51,7 +51,6 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     public static final String PROP_PAUSE_AD_RELOAD = "pauseAdReload";
     public static final String PROP_MEDIA_ASPECT_RATIO = "mediaAspectRatio";
     public static final String PROP_VIDEO_OPTIONS = "videoOptions";
-    public static final String PROP_MEDIATION_OPTIONS = "mediationOptions";
     public static final String PROP_TARGETING_OPTIONS = "targetingOptions";
     public static final String PROP_AD_REPOSITORY = "repository";
     public static final String PROP_CUSTOM_TEMPLATE_IDS = "customTemplateIds";
@@ -125,26 +124,6 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
         }
     }
 
-    @Override
-    public void onDropViewInstance(@NonNull RNAdmobNativeView nativeAdWrapper) {
-        super.onDropViewInstance(nativeAdWrapper);
-        nativeAdWrapper.removeHandler();
-
-        CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(), nativeAdWrapper.adListener);
-
-        if (nativeAdWrapper.nativeAd != null) {
-            if (nativeAdWrapper.unifiedNativeAdContainer != null) {
-                nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
-            } else {
-                nativeAdWrapper.nativeAdView.destroy();
-            }
-        }
-        if (nativeAdWrapper.nativeAdView != null) {
-            nativeAdWrapper.nativeAdView.destroy();
-        }
-    }
-
-
     @ReactProp(name = PROP_TARGETING_OPTIONS)
     public void setPropTargetingOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
         nativeAdWrapper.setTargetingOptions(options);
@@ -153,11 +132,6 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     @ReactProp(name = PROP_VIDEO_OPTIONS)
     public void setVideoOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
         nativeAdWrapper.setVideoOptions(options);
-    }
-
-    @ReactProp(name = PROP_MEDIATION_OPTIONS)
-    public void setMediationOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
-        nativeAdWrapper.setMediationOptions(options);
     }
 
     @ReactProp(name = PROP_NON_PERSONALIZED_ADS, defaultBoolean = false)
@@ -285,4 +259,27 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     public void setRefreshInterval(final RNAdmobNativeView nativeAdWrapper, final int interval) {
         nativeAdWrapper.setAdRefreshInterval(interval);
     }
+
+    @Override
+    public void onDropViewInstance(@NonNull RNAdmobNativeView nativeAdWrapper) {
+        super.onDropViewInstance(nativeAdWrapper);
+        nativeAdWrapper.removeHandler();
+
+        CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(),nativeAdWrapper.adListener);
+
+        if (nativeAdWrapper.nativeAd != null){
+            if (nativeAdWrapper.unifiedNativeAdContainer != null){
+                nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
+            } else{
+                nativeAdWrapper.nativeAdView.destroy();
+            }
+        }
+        if (nativeAdWrapper.nativeAdView != null){
+            nativeAdWrapper.nativeAdView.removeAllViews();
+            nativeAdWrapper.nativeAdView.destroy();
+            nativeAdWrapper.removeAllViews();
+        }
+    }
+
+
 }
