@@ -144,11 +144,13 @@ export class NativeAdView extends Component {
   };
 
   recordImpression = () => {
-      UIManager.dispatchViewManagerCommand(
-          findNodeHandle(this.nativeAdRef),
-          UIManager.getViewManagerConfig('RNGADNativeView').Commands.recordImpression,
-          undefined
-      );
+    if (Platform.OS !== 'ios') {
+        UIManager.dispatchViewManagerCommand(
+            findNodeHandle(this.nativeAdRef),
+            UIManager.getViewManagerConfig('RNGADNativeView').Commands.recordImpression,
+            undefined,
+        );
+    }
   };
 
   triggerClick = () => {
