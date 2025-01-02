@@ -168,7 +168,7 @@ type AdRepositoryConfig = {
    */
   name?: string;
   /** **(Required)** Provide adUnitId to load ads. */
-  adUnitId: string;
+  adUnitId?: string;
   /**The number of ads to preload. Default is `5` */
   numOfAds?: number;
   /**
@@ -192,8 +192,9 @@ type AdRepositoryConfig = {
   videoOptions?: VideoOptions;
   mediationOptions?: MediationOptions;
   targetingOptions?: TargetingOptions;
-  adChoicesPlacement?: "topLeft" | "topRight" | "bottomLeft" | "bottomRight";
-  mediaAspectRatio?: "any" | "landscape" | "portrait" | "square" | "unknown";
+  adChoicesPlacement?: "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | number;
+  mediaAspectRatio?: "any" | "landscape" | "portrait" | "square" | "unknown" | number;
+  customTemplateIds?: Array<string>;
 };
 
 type ImagePropsWithOptionalSource = Omit<ImageProps, 'source'> &
@@ -348,7 +349,7 @@ type StarViewProps = {
   emptyIconColor?: string;
 };
 
-declare module "@external/react-native-admob-native-ads" {
+declare module "react-native-admob-native-ads" {
   /**
    *
    * Wrapper for the UnifiedNativeAdView from Google Ads SDK. All your views should be

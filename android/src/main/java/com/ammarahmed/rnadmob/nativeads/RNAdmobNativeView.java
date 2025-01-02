@@ -2,10 +2,8 @@ package com.ammarahmed.rnadmob.nativeads;
 
 import android.content.Context;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -392,22 +390,33 @@ public class RNAdmobNativeView extends LinearLayout {
     private void getAdFromRepository() {
         try {
             if (!CacheManager.instance.isRegistered(adRepo)) {
-                if (adListener != null)
+                if (adListener != null) {
                     adListener.onAdFailedToLoad(new LoadAdError(3, "The requested repo is not registered", "", null, null));
+                }
             } else {
+
                 CacheManager.instance.attachAdListener(adRepo, adListener);
                 if (CacheManager.instance.numberOfAds(adRepo) != 0) {
+
                     unifiedNativeAdContainer = CacheManager.instance.getNativeAd(adRepo);
 
                     if (unifiedNativeAdContainer != null) {
                         nativeAd = unifiedNativeAdContainer.unifiedNativeAd;
-                        nativeAdView.setNativeAd(nativeAd);
-                        if (mediaView != null) {
-                            nativeAdView.setMediaView(mediaView);
-                            mediaView.requestLayout();
-                            setNativeAd();
+                        if (nativeAd != null) {
+                            nativeAdView.setNativeAd(nativeAd);
+                            if (mediaView != null) {
+                                nativeAdView.setMediaView(mediaView);
+                                mediaView.requestLayout();
+                                setNativeAd();
+                            }
+                            setNativeAdToJS(nativeAd);
+                        } else {
+                            customFormatAd = unifiedNativeAdContainer.unifiedCustomNativeAd;
+                            if (customFormatAd != null) {
+                                setNativeAd();
+                                setNativeAdToJS(customFormatAd);
+                            }
                         }
-                        setNativeAdToJS(nativeAd);
                     }
                 } else {
                     if (!CacheManager.instance.isLoading(adRepo)) {

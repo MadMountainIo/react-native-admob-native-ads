@@ -1,6 +1,7 @@
 package com.ammarahmed.rnadmob.nativeads;
 
 import com.google.android.gms.ads.nativead.NativeAd;
+import com.google.android.gms.ads.nativead.NativeCustomFormatAd;
 
 import java.util.Comparator;
 
@@ -11,6 +12,7 @@ public class RNAdMobUnifiedAdContainer {
     public Integer showCount;
     public Integer references;
     NativeAd unifiedNativeAd;
+    NativeCustomFormatAd unifiedCustomNativeAd;
 
     RNAdMobUnifiedAdContainer(NativeAd nativeAd, Long t, @Nullable Integer n){
         unifiedNativeAd = nativeAd;
@@ -18,6 +20,15 @@ public class RNAdMobUnifiedAdContainer {
         loadTime = t;
         references = 0;
     }
+
+
+    RNAdMobUnifiedAdContainer(NativeCustomFormatAd nativeAd, Long t, @Nullable Integer n){
+        unifiedCustomNativeAd = nativeAd;
+        showCount = n != null ? n : 0;
+        loadTime = t;
+        references = 0;
+    }
+
 }
 
 class RNAdMobUnifiedAdComparator implements Comparator<RNAdMobUnifiedAdContainer> {

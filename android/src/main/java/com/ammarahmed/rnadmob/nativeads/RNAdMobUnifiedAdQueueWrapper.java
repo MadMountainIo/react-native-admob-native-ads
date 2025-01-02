@@ -4,8 +4,11 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.AdListener;
@@ -15,6 +18,7 @@ import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.VideoOptions;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import com.google.android.gms.ads.nativead.NativeAdOptions;
+import com.google.android.gms.ads.nativead.NativeCustomFormatAd;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -218,6 +222,22 @@ public class RNAdMobUnifiedAdQueueWrapper {
         unifiedNativeAdLoadedListener = new UnifiedNativeAdLoadedListener(name, nativeAds,
                 totalAds, mContext);
         AdLoader.Builder builder = new AdLoader.Builder(mContext, adUnitId);
+        
+        String[] customTemplateIds = new String[]{};
+        if (config.hasKey("customTemplateIds")) {
+            ReadableArray customTemplateIdsArray = config.getArray("customTemplateIds");
+            customTemplateIds = new String[customTemplateIdsArray.size()];
+            for (int i = 0; i < customTemplateIdsArray.size(); i++) {
+                customTemplateIds[i] = customTemplateIdsArray.getString(i);
+            }
+        }
+
+        if (customTemplateIds != null && customTemplateIds.length > 0) {
+            for (String customTemplateId : customTemplateIds) {
+                builder.forCustomFormatAd(customTemplateId, unifiedNativeAdLoadedListener, unifiedNativeAdLoadedListener);
+            }
+        }
+
         builder.forNativeAd(unifiedNativeAdLoadedListener);
         adLoader = builder.withAdListener(adListener).build();
     }
@@ -227,7 +247,7 @@ public class RNAdMobUnifiedAdQueueWrapper {
         if (require2fill <= 0 || isLoading()) {
             return;
         }
-        Log.i("AdMob repo", "require to load >" + require2fill + "< ads more");
+
         loadingAdRequestCount = require2fill;
         if (mediation) {
             for (int i = 0; i < require2fill; i++) {
