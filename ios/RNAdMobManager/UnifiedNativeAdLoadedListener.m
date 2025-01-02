@@ -10,8 +10,10 @@
 #import "RNAdMobUnifiedAdContainer.h"
 #import "EventEmitter.h"
 #import "CacheManager.h"
+
 @implementation UnifiedNativeAdLoadedListener
--(instancetype) initWithRepo:(NSString *)repo nativeAds:(NSMutableArray<RNAdMobUnifiedAdContainer *> *) nativeAds tAds:(int)tAds{
+
+-(instancetype) initWithRepo:(NSString *)repo nativeAds:(NSMutableArray<RNAdMobUnifiedAdContainer *> *) nativeAds tAds:(int)tAds {
     _repo = repo;
     _nativeAds = nativeAds;
     _totalAds = tAds;
@@ -19,33 +21,44 @@
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
+    [self handleReceivedAd:nativeAd];
+}
+
+- (void)adLoader:(nonnull GADAdLoader *)adLoader didReceiveCustomNativeAd:(nonnull GADCustomNativeAd *)customNativeAd {
+    [self handleReceivedAd:customNativeAd];
+}
+
+- (void)handleReceivedAd:(id)ad {
     long long time = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
-    if (self.nativeAds.count > _totalAds){
+    if (self.nativeAds.count > _totalAds) {
         // remove oldest ad if it is full
         RNAdMobUnifiedAdContainer *toBeRemoved = nil;
 
-        for (RNAdMobUnifiedAdContainer *ad in _nativeAds)
-        {
-            if (ad.loadTime < time && ad.references <=0){
-                time = ad.loadTime;
-                toBeRemoved = ad;
+        for (RNAdMobUnifiedAdContainer *adContainer in _nativeAds) {
+            if (adContainer.loadTime < time && adContainer.references <= 0) {
+                time = adContainer.loadTime;
+                toBeRemoved = adContainer;
             }
         }
-        if (toBeRemoved !=  nil){
+        if (toBeRemoved != nil) {
             toBeRemoved.unifiedNativeAd = nil;
             [self.nativeAds removeObject:toBeRemoved];
         }
     }
-    RNAdMobUnifiedAdContainer *coniner = [[RNAdMobUnifiedAdContainer alloc] initWithAd:nativeAd loadTime:time showCount:0];
-    [self.nativeAds addObject: coniner];
+    RNAdMobUnifiedAdContainer *container = [[RNAdMobUnifiedAdContainer alloc] initWithAd:ad loadTime:time showCount:0];
+    [self.nativeAds addObject:container];
 
-    NSMutableDictionary*  args = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary* args = [[NSMutableDictionary alloc] init];
     [args setObject:[NSNumber numberWithInteger:_nativeAds.count] forKey:_repo];
     [EventEmitter.sharedInstance sendEvent:[CacheManager EVENT_AD_PRELOAD_LOADED:_repo] dict:args];
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader didFailToReceiveAdWithError:(nonnull NSError *)error {
-
+    // Handle the error
+    NSMutableDictionary* args = [[NSMutableDictionary alloc] init];
+    [args setObject:[NSNumber numberWithInteger:error.code] forKey:@"errorCode"];
+    [args setObject:error.localizedDescription forKey:@"errorMessage"];
+    [EventEmitter.sharedInstance sendEvent:[CacheManager EVENT_AD_PRELOAD_FAILED:_repo] dict:args];
 }
 
 @end

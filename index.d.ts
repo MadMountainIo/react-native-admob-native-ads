@@ -84,6 +84,21 @@ type NativeAd = {
      * template or native
      */
     type: boolean;
+
+    /**
+     * Shopping list
+     */
+    shoppinglist?: string;
+
+    /**
+     * Clickthrough url
+     */
+    clickthroughurl?: string;
+
+    /**
+     * Deeplink
+     */
+    deeplink?: string;
 };
 
 export type CustomFormatAd = {
@@ -549,6 +564,7 @@ declare module "react-native-admob-native-ads" {
     onVideoMute?: (muted: boolean) => void;
     paused?: boolean;
     muted?: boolean;
+    aspectRatio?: number;
   }): JSX.Element;
 
   /**

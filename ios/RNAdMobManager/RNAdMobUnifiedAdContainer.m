@@ -19,6 +19,15 @@
     return self;
 
 }
+
+- (instancetype)initWithCustomNativeAd:(GADCustomNativeAd *)customNativeAd loadTime:(long long) loadTime  showCount:(int)showCount{
+    _customNativeAd = customNativeAd;
+    _loadTime = loadTime;
+    _showCount = showCount;
+    _references = 0;
+    return self;
+}
+
 - (int)compareTo:(id<Comparable,NSObject>)object {
     RNAdMobUnifiedAdContainer *container = (RNAdMobUnifiedAdContainer *)object;
 

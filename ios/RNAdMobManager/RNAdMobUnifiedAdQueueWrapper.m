@@ -99,6 +99,10 @@
         [adRequest registerAdNetworkExtras:extras];
     }
 
+    if ([config objectForKey:@"customTemplateIds"]){
+        [self setCustomTemplateIds:[config objectForKey:@"customTemplateIds"]];
+    }
+
     unifiedNativeAdLoadedListener = [[UnifiedNativeAdLoadedListener alloc]initWithRepo:repo nativeAds:_nativeAds tAds:_totalAds];
     return self;
 }
@@ -193,6 +197,24 @@
     //link:https://stackoverflow.com/questions/44648610/collection-nsarraym-was-mutated-while-being-enumerated
     for (id<AdListener> listener in [attachedAdListeners copy]){
         [listener didAdLoaded:nativeAd];
+    }
+    [EventEmitter.sharedInstance sendEvent:[CacheManager EVENT_AD_PRELOAD_LOADED:_name] dict:nil];
+
+    if (loadingAdRequestCount == 0){
+        [self fillAds];//fill up repository if need
+    }
+    // The adLoader has finished loading ads, and a new request can be sent.
+}
+
+- (void)adLoader:(nonnull GADAdLoader *)adLoader didReceiveCustomNativeAd:(nonnull GADCustomNativeAd *)customNativeAd {
+    loadingAdRequestCount--;
+    retryCount = 0;
+    [unifiedNativeAdLoadedListener adLoader:adLoader didReceiveCustomNativeAd:customNativeAd];
+
+    //to prevent a crash (check the link below), first copy attachedAdListeners into a new array
+    //link:https://stackoverflow.com/questions/44648610/collection-nsarraym-was-mutated-while-being-enumerated
+    for (id<AdListener> listener in [attachedAdListeners copy]){
+        [listener didAdLoaded:customNativeAd];
     }
     [EventEmitter.sharedInstance sendEvent:[CacheManager EVENT_AD_PRELOAD_LOADED:_name] dict:nil];
 

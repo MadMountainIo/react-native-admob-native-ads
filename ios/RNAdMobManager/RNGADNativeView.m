@@ -502,8 +502,12 @@ BOOL *nonPersonalizedAds;
             [self didFailToReceiveAdWithError:error];
     } else {
         unifiedNativeAdContainer = [CacheManager.sharedInstance getNativeAd:adRepo];
-        if (unifiedNativeAdContainer != nil) {
-                [self setNativeAdToJS:unifiedNativeAdContainer.unifiedNativeAd];
+            if (unifiedNativeAdContainer != nil) {
+                if (unifiedNativeAdContainer.customNativeAd != nil) {
+                    [self setNativeAdToJS:unifiedNativeAdContainer.customNativeAd];
+                } else {
+                    [self setNativeAdToJS:unifiedNativeAdContainer.unifiedNativeAd];
+                }
         } else {
             if (![CacheManager.sharedInstance isLoading:adRepo]){
                 [CacheManager.sharedInstance attachAdListener:adRepo listener:self];
