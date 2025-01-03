@@ -55,6 +55,7 @@ BOOL *nonPersonalizedAds;
 
 - (instancetype)initWithBridge:(RCTBridge *)_bridge
 {
+    adRepo = nil;
     delay = @1;
     refreshingInterval = @60000;
     isLoading = FALSE;

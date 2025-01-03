@@ -20,7 +20,6 @@
 @property(nonatomic, readwrite) long expirationInterval; // in ms
 @property(nonatomic, readwrite) BOOL isMediationEnabled;
 @property(nonatomic, readwrite) UIViewController* rootVC;
-@property (nonatomic, copy) NSArray *customTemplateIds;
 
 @property(nonatomic, readwrite) NSMutableArray<RNAdMobUnifiedAdContainer *> *nativeAds;
 
