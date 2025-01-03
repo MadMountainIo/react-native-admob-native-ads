@@ -30,6 +30,7 @@
     int retryDelay;
     int totalRetryCount;
     int retryCount;
+    NSArray* customTemplateIds;
 }
 
 -(instancetype)initWithConfig:(NSDictionary *)config repo:(NSString *)repo{
@@ -107,6 +108,10 @@
     return self;
 }
 
+ -(void)setCustomTemplateIds:(NSArray *)templateIds {
+    customTemplateIds = templateIds;
+}
+
 -(void) attachAdListener:(id<AdListener>) listener {
     [attachedAdListeners addObject:listener];
 }
@@ -134,6 +139,10 @@
     adLoader = [[GADAdLoader alloc] initWithAdUnitID:_adUnitId rootViewController:nil adTypes:@[GADAdLoaderAdTypeNative] options:options];
     [adLoader setDelegate:self];
 
+    if (customTemplateIds != nil) {
+        [adLoader setCustomTemplateIDs:customTemplateIds];
+    }
+
     loadingAdRequestCount = require2fill;
     if(_isMediationEnabled){
         printf("admob request count:",MIN(require2fill,5));
@@ -145,6 +154,11 @@
         [adLoader loadRequest:adRequest];
     }
 }
+
+- (NSArray<NSString *> *)customNativeAdFormatIDsForAdLoader:(GADAdLoader *)adLoader {
+    return customTemplateIds;
+}
+
 -(RNAdMobUnifiedAdContainer*) getAd{
     long long now = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
     RNAdMobUnifiedAdContainer *ad = nil;

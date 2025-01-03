@@ -10,7 +10,7 @@
 #import "RNAdMobUnifiedAdContainer.h"
 #import "AdListener.h"
 
-@interface RNAdMobUnifiedAdQueueWrapper:NSObject<GADNativeAdLoaderDelegate,GADNativeAdDelegate>
+@interface RNAdMobUnifiedAdQueueWrapper:NSObject<GADNativeAdLoaderDelegate,GADNativeAdDelegate, GADCustomNativeAdLoaderDelegate>
 
 -(instancetype)initWithConfig:(NSDictionary *)config repo:(NSString *)repo;
 
