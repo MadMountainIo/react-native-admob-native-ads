@@ -25,7 +25,7 @@
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader didReceiveCustomNativeAd:(nonnull GADCustomNativeAd *)customNativeAd {
-    [self handleReceivedAd:customNativeAd];
+    [self handleReceivedCustomNativeAd:customNativeAd];
 }
 
 - (void)handleReceivedAd:(id)ad {
@@ -46,6 +46,31 @@
         }
     }
     RNAdMobUnifiedAdContainer *container = [[RNAdMobUnifiedAdContainer alloc] initWithAd:ad loadTime:time showCount:0];
+    [self.nativeAds addObject:container];
+
+    NSMutableDictionary* args = [[NSMutableDictionary alloc] init];
+    [args setObject:[NSNumber numberWithInteger:_nativeAds.count] forKey:_repo];
+    [EventEmitter.sharedInstance sendEvent:[CacheManager EVENT_AD_PRELOAD_LOADED:_repo] dict:args];
+}
+
+-(void)handleReceivedCustomNativeAd:(GADCustomNativeAd *)customNativeAd {
+    long long time = (long long)([[NSDate date] timeIntervalSince1970] * 1000.0);
+    if (self.nativeAds.count > _totalAds) {
+        // remove oldest ad if it is full
+        RNAdMobUnifiedAdContainer *toBeRemoved = nil;
+
+        for (RNAdMobUnifiedAdContainer *adContainer in _nativeAds) {
+            if (adContainer.loadTime < time && adContainer.references <= 0) {
+                time = adContainer.loadTime;
+                toBeRemoved = adContainer;
+            }
+        }
+        if (toBeRemoved != nil) {
+            toBeRemoved.unifiedNativeAd = nil;
+            [self.nativeAds removeObject:toBeRemoved];
+        }
+    }
+    RNAdMobUnifiedAdContainer *container = [[RNAdMobUnifiedAdContainer alloc] initWithCustomNativeAd:customNativeAd loadTime:time showCount:0];
     [self.nativeAds addObject:container];
 
     NSMutableDictionary* args = [[NSMutableDictionary alloc] init];

@@ -10,7 +10,7 @@
 #import "RNAdMobUnifiedAdContainer.h"
 #import "AdListener.h"
 
-@interface RNAdMobUnifiedAdQueueWrapper:NSObject<GADNativeAdLoaderDelegate,GADNativeAdDelegate, GADCustomNativeAdLoaderDelegate>
+@interface RNAdMobUnifiedAdQueueWrapper:NSObject<GADNativeAdLoaderDelegate,GADNativeAdDelegate, GADCustomNativeAdLoaderDelegate, GADCustomNativeAdDelegate>
 
 -(instancetype)initWithConfig:(NSDictionary *)config repo:(NSString *)repo;
 
@@ -20,6 +20,7 @@
 @property(nonatomic, readwrite) long expirationInterval; // in ms
 @property(nonatomic, readwrite) BOOL isMediationEnabled;
 @property(nonatomic, readwrite) UIViewController* rootVC;
+@property (nonatomic, copy) NSArray *customTemplateIds;
 
 @property(nonatomic, readwrite) NSMutableArray<RNAdMobUnifiedAdContainer *> *nativeAds;
 

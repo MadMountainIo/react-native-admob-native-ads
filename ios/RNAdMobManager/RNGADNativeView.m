@@ -504,7 +504,7 @@ BOOL *nonPersonalizedAds;
         unifiedNativeAdContainer = [CacheManager.sharedInstance getNativeAd:adRepo];
             if (unifiedNativeAdContainer != nil) {
                 if (unifiedNativeAdContainer.customNativeAd != nil) {
-                    [self setNativeAdToJS:unifiedNativeAdContainer.customNativeAd];
+                    [self setCustomNativeAdToJS:unifiedNativeAdContainer.customNativeAd];
                 } else {
                     [self setNativeAdToJS:unifiedNativeAdContainer.unifiedNativeAd];
                 }
