@@ -139,10 +139,6 @@
     adLoader = [[GADAdLoader alloc] initWithAdUnitID:_adUnitId rootViewController:nil adTypes:@[GADAdLoaderAdTypeNative] options:options];
     [adLoader setDelegate:self];
 
-    if (customTemplateIds != nil) {
-        [adLoader setCustomTemplateIDs:customTemplateIds];
-    }
-
     loadingAdRequestCount = require2fill;
     if(_isMediationEnabled){
         printf("admob request count:",MIN(require2fill,5));
