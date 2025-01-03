@@ -54,11 +54,7 @@
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader didFailToReceiveAdWithError:(nonnull NSError *)error {
-    // Handle the error
-    NSMutableDictionary* args = [[NSMutableDictionary alloc] init];
-    [args setObject:[NSNumber numberWithInteger:error.code] forKey:@"errorCode"];
-    [args setObject:error.localizedDescription forKey:@"errorMessage"];
-    [EventEmitter.sharedInstance sendEvent:[CacheManager EVENT_AD_PRELOAD_FAILED:_repo] dict:args];
+
 }
 
 @end
