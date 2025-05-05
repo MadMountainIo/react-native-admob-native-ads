@@ -531,6 +531,8 @@ public class RNAdmobNativeView extends LinearLayout {
         }
 
         if (nativeAdView != null && customFormatAd != null) {
+            customFormatAd.getDisplayOpenMeasurement().setView(nativeAdView);
+            customFormatAd.getDisplayOpenMeasurement().start();
             if (mediaView != null && nativeAdView.getMediaView() != null) {
                 nativeAdView.getMediaView().setMediaContent(customFormatAd.getMediaContent());
 

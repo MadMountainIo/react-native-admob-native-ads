@@ -630,6 +630,16 @@ BOOL *nonPersonalizedAds;
          [self.mediaView setMediaContent:nativeAd.mediaContent];
      }
 
+     // Włączenie DisplayAdMeasurement dla iOS (odpowiednik DisplayOpenMeasurement w Androidzie)
+     if (nativeAd.displayAdMeasurement != nil) {
+         nativeAd.displayAdMeasurement.view = self;
+         NSError *error = nil;
+         [nativeAd.displayAdMeasurement startWithError:&error];
+         if (error != nil) {
+             NSLog(@"DisplayAdMeasurement error: %@", error.localizedDescription);
+         }
+     }
+
      if (nativeAd != NULL) {
          NSMutableDictionary *dic = [NSMutableDictionary dictionary];
          
