@@ -221,6 +221,4 @@ NativeAdView.defaultProps = {
 
 NativeAdView.simulatorId = 'SIMULATOR';
 
-const RNGADNativeView = requireNativeComponent("RNGADNativeView");
-
 export default NativeAdView;

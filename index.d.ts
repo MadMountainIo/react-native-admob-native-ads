@@ -210,6 +210,8 @@ type AdRepositoryConfig = {
   adChoicesPlacement?: "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | number;
   mediaAspectRatio?: "any" | "landscape" | "portrait" | "square" | "unknown" | number;
   customTemplateIds?: Array<string>;
+  swipeGestureDirection?: "right" | "left" | "up" | "down";
+  tapsAllowed?: boolean;
 };
 
 type ImagePropsWithOptionalSource = Omit<ImageProps, 'source'> &
@@ -301,6 +303,10 @@ type NativeAdViewProps = {
     videoOptions?: VideoOptions;
     mediationOptions?: MediationOptions;
     targetingOptions?: TargetingOptions;
+  enableSwipeGestureOptions: {
+    tapsAllowed?: boolean;
+    swipeGestureDirection?: "right" | "left" | "up" | "down";
+  };
 
     testDevices?: Array<string>;
     onAdOpened?: () => void;
@@ -490,8 +496,18 @@ declare module "react-native-admob-native-ads" {
         | "onAdPreloadClosed"
         | "onAdPreloadClicked"
         | "onAdPreloadImpression",
-      listener
+      listener: (event: {
+        adUnitId: string;
+        repo: string;
+        error?: {
+          message: string;
+          code: number;
+          domain: string;
+        };
+      }) => void
     ) => EmitterSubscription;
+    openAdInspector: () => void;
+    openDebugMenu: (adUnitId: string) => void;
 
     /**
      * If you want to explicitly show only Images and no video etc, use ImageView.

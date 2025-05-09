@@ -255,6 +255,11 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
         nativeAdWrapper.setAdRepository(repo);
     }
 
+    @ReactProp(name = "enableSwipeGestureOptions")
+    public void setEnableSwipeGestureOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
+        nativeAdWrapper.setSwipeGestureOptions(options.getInt("swipeGestureDirection"), options.hasKey("tapsAllowed") && options.getBoolean("tapsAllowed"));
+    }
+
     @ReactProp(name = PROP_REFRESH_INTERVAL)
     public void setRefreshInterval(final RNAdmobNativeView nativeAdWrapper, final int interval) {
         nativeAdWrapper.setAdRefreshInterval(interval);
@@ -262,24 +267,21 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
 
     @Override
     public void onDropViewInstance(@NonNull RNAdmobNativeView nativeAdWrapper) {
-        super.onDropViewInstance(nativeAdWrapper);
-        nativeAdWrapper.removeHandler();
+            super.onDropViewInstance(nativeAdWrapper);
+            nativeAdWrapper.removeHandler();
 
-        CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(),nativeAdWrapper.adListener);
+            CacheManager.instance.detachAdListener(nativeAdWrapper.getAdRepo(), nativeAdWrapper.adListener);
 
-        if (nativeAdWrapper.nativeAd != null){
-            if (nativeAdWrapper.unifiedNativeAdContainer != null){
-                nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
-            } else{
-                nativeAdWrapper.nativeAdView.destroy();
+            if (nativeAdWrapper.nativeAd != null) {
+                if (nativeAdWrapper.unifiedNativeAdContainer != null) {
+                    nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
+                }
             }
-        }
-        if (nativeAdWrapper.nativeAdView != null){
-            nativeAdWrapper.nativeAdView.removeAllViews();
-            nativeAdWrapper.nativeAdView.destroy();
-            nativeAdWrapper.removeAllViews();
-        }
+
+            if (nativeAdWrapper.nativeAdView != null) {
+                nativeAdWrapper.nativeAdView.removeAllViews();
+                nativeAdWrapper.nativeAdView.destroy();
+                nativeAdWrapper.removeAllViews();
+            }
     }
-
-
 }

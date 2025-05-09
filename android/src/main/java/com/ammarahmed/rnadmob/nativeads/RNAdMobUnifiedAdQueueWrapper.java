@@ -17,6 +17,7 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.VideoOptions;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
+import com.google.android.gms.ads.formats.AdManagerAdViewOptions;
 import com.google.android.gms.ads.nativead.NativeAdOptions;
 import com.google.android.gms.ads.nativead.NativeCustomFormatAd;
 
@@ -39,7 +40,7 @@ public class RNAdMobUnifiedAdQueueWrapper {
     public List<RNAdMobUnifiedAdContainer> nativeAds;
     //AdListener attached to attachedAdListeners list,if they are waiting for load ads
     List<AdListener> attachedAdListeners = new ArrayList<>();
-    Context mContext;
+    ReactContext mContext;
     int loadingAdRequestCount = 0;
 
     VideoOptions.Builder videoOptions;
@@ -49,8 +50,9 @@ public class RNAdMobUnifiedAdQueueWrapper {
     private AdManagerAdRequest.Builder adRequest;
     private UnifiedNativeAdLoadedListener unifiedNativeAdLoadedListener;
     private final Handler handler = new Handler();
+    AdLoader.Builder adLoaderBuilder;
 
-    public RNAdMobUnifiedAdQueueWrapper(Context context, ReadableMap config, String repository) {
+    public RNAdMobUnifiedAdQueueWrapper(ReactContext context, ReadableMap config, String repository) {
         mContext = context;
         adUnitId = config.getString("adUnitId");
         name = repository;
@@ -83,19 +85,20 @@ public class RNAdMobUnifiedAdQueueWrapper {
                     error.putInt("code", adError.getCode());
                     error.putString("domain", adError.getDomain());
                     event.putMap("error", error);
-                    EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_PRELOAD_ERROR + ":" + name, event);
+
+                    EventEmitter.sendEvent(mContext, CacheManager.EVENT_AD_PRELOAD_ERROR + ":" + name, event);
                     notifyOnAdsLoadFailed(adError);
                     return;
                 }
 
                 if (retryCount >= totalRetryCount) {
-                    WritableMap event = Arguments.createMap();
+                    WritableMap event = getDefaultEventData();
                     WritableMap error = Arguments.createMap();
                     error.putString("message", "reach maximum retry");
                     error.putInt("code", AdRequest.ERROR_CODE_INTERNAL_ERROR);
                     error.putString("domain", "");
                     event.putMap("error", error);
-                    EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_PRELOAD_ERROR + ":" + name, event);
+                    EventEmitter.sendEvent( mContext, CacheManager.EVENT_AD_PRELOAD_ERROR + ":" + name, event);
                     notifyOnAdsLoadFailed(adError);
                     return;
                 }
@@ -112,35 +115,37 @@ public class RNAdMobUnifiedAdQueueWrapper {
             @Override
             public void onAdImpression() {
                 super.onAdImpression();
-                EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_IMPRESSION + ":" + name, null);
+                EventEmitter.sendEvent(mContext, CacheManager.EVENT_AD_IMPRESSION + ":" + name, getDefaultEventData());
 
             }
 
             @Override
             public void onAdClosed() {
                 super.onAdClosed();
-                EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_CLOSED + ":" + name, null);
+                WritableMap map = Arguments.createMap();
+                EventEmitter.sendEvent(mContext, CacheManager.EVENT_AD_CLOSED + ":" + name, getDefaultEventData());
 
             }
 
             @Override
             public void onAdOpened() {
                 super.onAdOpened();
-                EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_OPEN + ":" + name, null);
+                EventEmitter.sendEvent(mContext, CacheManager.EVENT_AD_OPEN + ":" + name, getDefaultEventData());
 
             }
 
             @Override
             public void onAdClicked() {
                 super.onAdClicked();
-                Log.d("RNADMOB", CacheManager.EVENT_AD_CLICKED + ":" + name);
-                EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_CLICKED + ":" + name, null);
+                EventEmitter.sendEvent(mContext, CacheManager.EVENT_AD_CLICKED + ":" + name, getDefaultEventData());
 
             }
 
             @Override
             public void onAdLoaded() {
                 super.onAdLoaded();
+
+                EventEmitter.sendEvent(mContext, CacheManager.EVENT_AD_PRELOAD_LOADED + ":" + name, getDefaultEventData());
 
                 retryCount = 0;
                 if (mediation) {
@@ -156,7 +161,13 @@ public class RNAdMobUnifiedAdQueueWrapper {
         };
 
         setConfiguration(config);
+    }
 
+    private WritableMap getDefaultEventData() {
+        WritableMap map = Arguments.createMap();
+        map.putString("adUnitId", adUnitId);
+        map.putString("repo", name);
+        return map;
     }
 
     private void  notifyOnAdsLoadFailed(LoadAdError adError){
@@ -216,6 +227,10 @@ public class RNAdMobUnifiedAdQueueWrapper {
             Utils.setMediaAspectRatio(config.getInt("mediaAspectRatio"), adOptions);
         }
 
+        if (config.hasKey("swipeGestureDirection")) {
+            adOptions.enableCustomClickGestureDirection(config.getInt("swipeGestureDirection"), config.hasKey("tapsAllowed") && config.getBoolean("tapsAllowed"));
+        }
+
         Utils.setVideoOptions(config.getMap("videoOptions"), videoOptions, adOptions);
         Utils.setTargetingOptions(config.getMap("targetingOptions"), adRequest);
 
@@ -253,8 +268,24 @@ public class RNAdMobUnifiedAdQueueWrapper {
             for (int i = 0; i < require2fill; i++) {
                 adLoader.loadAd(adRequest.build());
             }
-        } else {
-            adLoader.loadAds(adRequest.build(), require2fill);
+
+            adLoaderBuilder = new AdLoader.Builder(mContext, adUnitId);
+            adLoaderBuilder.withNativeAdOptions(adOptions.build());
+            adLoaderBuilder.forNativeAd(unifiedNativeAdLoadedListener);
+            adLoaderBuilder.withAdListener(adListener);
+            adLoader = adLoaderBuilder.build();
+
+            Log.i("AdMob repo", "require to load >" + require2fill + "< ads more");
+            loadingAdRequestCount = require2fill;
+            if (mediation) {
+                for (int i = 0; i < require2fill; i++) {
+                    adLoader.loadAd(adRequest.build());
+                }
+            } else {
+                adLoader.loadAds(adRequest.build(), require2fill);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
