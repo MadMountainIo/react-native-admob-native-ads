@@ -32,7 +32,7 @@
 @property (nonatomic, copy) NSNumber *starrating;
 @property (nonatomic, copy) NSNumber *callToAction;
 @property (nonatomic, copy) NSNumber *adChoicesPlacement;
-@property (nonatomic) BOOL *requestNonPersonalizedAdsOnly;
+@property (nonatomic) BOOL requestNonPersonalizedAdsOnly;
 
 
 @property (nonatomic, copy) NSNumber *mediaAspectRatio;

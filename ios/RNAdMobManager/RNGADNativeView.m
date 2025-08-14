@@ -46,7 +46,7 @@ GADVideoOptions *adVideoOptions;
 
 RNAdMobUnifiedAdContainer *unifiedNativeAdContainer;
 
-BOOL *nonPersonalizedAds;
+BOOL nonPersonalizedAds;
 
 - (void)dealloc
 {
@@ -187,7 +187,7 @@ BOOL *nonPersonalizedAds;
 
 }
 
-- (void)setRequestNonPersonalizedAdsOnly:(BOOL *)requestNonPersonalizedAdsOnly {
+- (void)setRequestNonPersonalizedAdsOnly:(BOOL)requestNonPersonalizedAdsOnly {
 
     nonPersonalizedAds = requestNonPersonalizedAdsOnly;
     GADExtras *extras = [[GADExtras alloc] init];

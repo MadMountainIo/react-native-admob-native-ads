@@ -25,7 +25,7 @@ GADVideoController *vc;
 
 
 
-- (void)setPause:(BOOL *)pause {
+- (void)setPause:(BOOL)pause {
     if (pause) {
         
         if (cMediaView.mediaContent != nil && vc != nil) {
@@ -40,9 +40,9 @@ GADVideoController *vc;
 
 
 
-- (void)setMuted:(BOOL *)muted {
+- (void)setMuted:(BOOL)muted {
     if (cMediaView.mediaContent != nil && vc != nil) {
-        [vc setMute:muted? YES : NO];
+        vc.muted = (muted ? YES : NO);
     }
 }
 

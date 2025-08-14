@@ -5,8 +5,8 @@
 
 @interface RNGADMediaView: UIView <GADVideoControllerDelegate>
 
-@property (nonatomic) BOOL *pause;
-@property (nonatomic) BOOL *muted;
+@property (nonatomic) BOOL pause;
+@property (nonatomic) BOOL muted;
 
 @property (nonatomic, copy) RCTDirectEventBlock onVideoPlay;
 @property (nonatomic, copy) RCTDirectEventBlock onVideoPause;
