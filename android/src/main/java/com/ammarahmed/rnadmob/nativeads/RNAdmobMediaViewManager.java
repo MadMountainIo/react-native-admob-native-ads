@@ -67,9 +67,22 @@ public class RNAdmobMediaViewManager extends ViewGroupManager<RNAdmobMediaView> 
 
     @Override
     public void receiveCommand(RNAdmobMediaView root, int commandId, @Nullable ReadableArray args) {
+        dispatchCommand(root, commandId);
+    }
+
+    @Override
+    public void receiveCommand(RNAdmobMediaView root, String commandId, @Nullable ReadableArray args) {
+        if ("getProgress".equals(commandId)) {
+            root.getCurrentProgress();
+        }
+    }
+
+    private void dispatchCommand(RNAdmobMediaView root, int commandId) {
         switch (commandId) {
             case COMMAND_GET_PROGRESS:
                 root.getCurrentProgress();
+                break;
+            default:
                 break;
         }
     }

@@ -40,11 +40,13 @@
 @property (nonatomic, copy) NSDictionary *targetingOptions;
 @property (nonatomic, copy) NSDictionary *videoOptions;
 @property (nonatomic, copy) NSArray *customTemplateIds;
+@property (nonatomic, copy) NSDictionary *enableSwipeGestureOptions;
 
 - (instancetype)initWithBridge:(RCTBridge *)bridge;
 
 - (void)loadAd;
 - (void)triggerClick;
+- (void)recordImpression;
 
 @property (nonatomic, copy) RCTDirectEventBlock onAdLoaded;
 @property (nonatomic, copy) RCTDirectEventBlock onAdFailedToLoad;
@@ -55,6 +57,7 @@
 @property (nonatomic, copy) RCTDirectEventBlock onAdImpression;
 @property (nonatomic, copy) RCTDirectEventBlock onNativeAdLoaded;
 @property (nonatomic, copy) RCTDirectEventBlock onCustomFormatAdLoaded;
+@property (nonatomic, copy) RCTDirectEventBlock onOmidStatus;
 
 @property (nonatomic, assign) BOOL isLoading;
 

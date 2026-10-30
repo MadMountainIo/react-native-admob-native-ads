@@ -47,6 +47,18 @@ RCT_EXPORT_METHOD(triggerClick:(nonnull NSNumber *)reactTag)
   }];
 }
 
+RCT_EXPORT_METHOD(recordImpression:(nonnull NSNumber *)reactTag)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNGADNativeView *> *viewRegistry) {
+      RNGADNativeView *view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[RNGADNativeView class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting RNGADNativeView, got: %@", view);
+    } else {
+      [view recordImpression];
+    }
+  }];
+}
+
 RCT_EXPORT_VIEW_PROPERTY(adSize, NSString)
 RCT_EXPORT_VIEW_PROPERTY(testDevices, NSArray)
 
@@ -72,6 +84,7 @@ RCT_EXPORT_VIEW_PROPERTY(callToAction, NSNumber)
 RCT_EXPORT_VIEW_PROPERTY(requestNonPersonalizedAdsOnly, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(adChoicesPlacement, NSNumber)
 RCT_EXPORT_VIEW_PROPERTY(repository, NSString)
+RCT_EXPORT_VIEW_PROPERTY(enableSwipeGestureOptions, NSDictionary)
 
 RCT_EXPORT_VIEW_PROPERTY(onSizeChange, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onAppEvent, RCTDirectEventBlock)
@@ -84,5 +97,6 @@ RCT_EXPORT_VIEW_PROPERTY(onAdClicked, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onAdImpression, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onNativeAdLoaded, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onCustomFormatAdLoaded, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onOmidStatus, RCTDirectEventBlock)
 
 @end

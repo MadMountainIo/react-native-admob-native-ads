@@ -12,6 +12,10 @@
 #endif
 
 @implementation RNGADNativeView : GADNativeAdView
+{
+    NSString *adRepo;
+    RNAdMobUnifiedAdContainer *unifiedNativeAdContainer;
+}
 
 RCTBridge *bridge;
 
@@ -36,15 +40,12 @@ dispatch_block_t block;
 RNGADMediaView *rnMediaView;
 BOOL isLoading = FALSE;
 BOOL isWait4Retry = FALSE;
-NSString *adRepo = nil;
 
 GADNativeAdViewAdOptions *adPlacementOptions;
 GADNativeAdMediaAdLoaderOptions *adMediaOptions;
-
+GADNativeAdCustomClickGestureOptions *clickGestureOptions;
 GAMRequest *adRequest;
 GADVideoOptions *adVideoOptions;
-
-RNAdMobUnifiedAdContainer *unifiedNativeAdContainer;
 
 BOOL nonPersonalizedAds;
 
@@ -55,7 +56,6 @@ BOOL nonPersonalizedAds;
 
 - (instancetype)initWithBridge:(RCTBridge *)_bridge
 {
-    adRepo = nil;
     delay = @1;
     refreshingInterval = @60000;
     isLoading = FALSE;
@@ -76,12 +76,42 @@ BOOL nonPersonalizedAds;
         unifiedNativeAdContainer.references -= 1;
         [CacheManager.sharedInstance detachAdListener:adRepo listener:self];
     } else {
-        // UIView was added to superview
+        // UIView was added to superview. The list hosting this ad can re-attach it (e.g.
+        // removeClippedSubviews); a running OMID session left on the detached view would keep
+        // measuring nothing. `displayAdMeasurement.view` is documented as modifiable after the
+        // session started (it is started in setCustomNativeAdToJS:), so just point it back here.
+        if (self.nativeCustomTemplateAd != nil
+                && self.nativeCustomTemplateAd.displayAdMeasurement != nil) {
+            self.nativeCustomTemplateAd.displayAdMeasurement.view = self;
+        }
     }
 }
 
 - (void)setCustomTemplateIds:(NSArray *)customTemplateIds {
     _customTemplateIds = customTemplateIds;
+}
+
+- (void) setEnableSwipeGestureOptions:(NSDictionary *)enableSwipeGestureOptions {
+        
+    clickGestureOptions = [[GADNativeAdCustomClickGestureOptions alloc] initWithSwipeGestureDirection:UISwipeGestureRecognizerDirectionUp tapsAllowed:false];
+    
+    if ([enableSwipeGestureOptions valueForKey:@"swipeGestureDirection"]) {
+        int direction = ((NSNumber *)[enableSwipeGestureOptions objectForKey:@"swipeGestureDirection"]).intValue;
+        
+        if (direction == 1) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionRight];
+        } else if (direction == 2) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionLeft];
+        } else if (direction == 4) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionUp];
+        } else if (direction == 8) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionDown];
+        }
+    }
+    
+    if ([enableSwipeGestureOptions valueForKey:@"tapsAllowed"]) {
+        [clickGestureOptions setTapsAllowed:[[enableSwipeGestureOptions valueForKey:@"tapsAllowed"] boolValue]];
+    }
 }
 
 - (void)setMediationOptions:(NSDictionary *)mediationOptions {
@@ -316,7 +346,8 @@ BOOL nonPersonalizedAds;
             rnMediaView = (RNGADMediaView *) viewRegistry[mediaview];
 
             if (rnMediaView != nil) {
-                [self setMediaView:(GADMediaView *) rnMediaView.subviews.firstObject];
+                [self setMediaView:(GADMediaView *) rnMediaView];
+                
                 if (self.nativeAd != nil) {
                     [self.mediaView setMediaContent:self.nativeAd.mediaContent];
                    [self reloadAdInView:self.nativeAd isMedia:YES];
@@ -479,13 +510,30 @@ BOOL nonPersonalizedAds;
     }
 }
 
+// Counterpart of the Android `recordImpression` command. Without it every custom-format
+// placement on iOS records zero GAM impressions, and its OMID impression event never fires,
+// so a verification vendor has nothing to attribute the ad to.
+// GMA records at most one impression per ad object, so repeat calls are safe.
+- (void)recordImpression {
+    if (self.nativeCustomTemplateAd != nil) {
+        [self.nativeCustomTemplateAd recordImpression];
+    }
+}
+
 - (void) requestAd{
     if (isLoading == TRUE) return;
     isLoading = TRUE;
+    
+    NSMutableArray<GADAdLoaderOptions *>* options = [NSMutableArray arrayWithArray:@[adMediaOptions,adVideoOptions,adPlacementOptions]];
+    
+    if (clickGestureOptions) {
+        [options addObject:clickGestureOptions];
+    }
+    
     self.adLoader = [[GADAdLoader alloc] initWithAdUnitID:adUnitId
                                        rootViewController:self.reactViewController
                                                   adTypes:@[ GADAdLoaderAdTypeNative, GADAdLoaderAdTypeCustomNative ]
-                                                  options:@[adMediaOptions,adPlacementOptions,adVideoOptions]];
+                                                  options:options];
 
 
     self.adLoader.delegate = self;
@@ -505,6 +553,8 @@ BOOL nonPersonalizedAds;
         unifiedNativeAdContainer = [CacheManager.sharedInstance getNativeAd:adRepo];
             if (unifiedNativeAdContainer != nil) {
                 if (unifiedNativeAdContainer.customNativeAd != nil) {
+                    self.nativeCustomTemplateAd = unifiedNativeAdContainer.customNativeAd;
+                    [self.nativeCustomTemplateAd setCustomClickHandler:^(NSString * _Nonnull assetID) {}];
                     [self setCustomNativeAdToJS:unifiedNativeAdContainer.customNativeAd];
                 } else {
                     [self setNativeAdToJS:unifiedNativeAdContainer.unifiedNativeAd];
@@ -526,17 +576,19 @@ BOOL nonPersonalizedAds;
     nativeAd.delegate = self;
 
      if (rnMediaView != nil) {
-         [self setMediaView:rnMediaView.subviews.firstObject];
+         [self setMediaView: rnMediaView];
          if (nativeAd.mediaContent.videoController != nil) {
              nativeAd.mediaContent.videoController.delegate = rnMediaView.self;
          }
      }
-
+    
      [self setNativeAd:nativeAd];
 
      if (self.mediaView != nil) {
          [self.mediaView setMediaContent:nativeAd.mediaContent];
      }
+    
+     [self setAdChoicesPlacement:adChoicesPlace];
 
      if (nativeAd != NULL) {
          NSMutableDictionary *dic = [NSMutableDictionary dictionary];
@@ -631,13 +683,19 @@ BOOL nonPersonalizedAds;
      }
 
      // Włączenie DisplayAdMeasurement dla iOS (odpowiednik DisplayOpenMeasurement w Androidzie)
+     // Outcome reported to JS as onOmidStatus (app monitoring), like the Android view. GMA exposes
+     // no further OMID events (impression, geometry) to the app.
      if (nativeAd.displayAdMeasurement != nil) {
          nativeAd.displayAdMeasurement.view = self;
          NSError *error = nil;
-         [nativeAd.displayAdMeasurement startWithError:&error];
+         BOOL started = [nativeAd.displayAdMeasurement startWithError:&error];
          if (error != nil) {
              NSLog(@"DisplayAdMeasurement error: %@", error.localizedDescription);
          }
+         [self sendOmidStatus:(started && error == nil) ? @"started" : @"start_failed"
+                       detail:error != nil ? [NSString stringWithFormat:@"%@/%ld", error.domain, (long)error.code] : nil];
+     } else {
+         [self sendOmidStatus:@"no_measurement" detail:nil];
      }
 
      if (nativeAd != NULL) {
@@ -676,10 +734,30 @@ BOOL nonPersonalizedAds;
      }
 }
 
+- (void)sendOmidStatus:(NSString *)status detail:(nullable NSString *)detail {
+    if (!self.onOmidStatus) {
+        return;
+    }
+    NSMutableDictionary *event = [NSMutableDictionary dictionary];
+    event[@"status"] = status;
+    event[@"trigger"] = @"setCustomNativeAdToJS";
+    event[@"attached"] = @(self.window != nil);
+    if (detail != nil) {
+        event[@"detail"] = detail;
+    }
+    self.onOmidStatus(event);
+}
+
 - (void)adLoader:(GADAdLoader *)adLoader didFailToReceiveAdWithError:(NSError *)error {
     isLoading = FALSE;
     if (self.onAdFailedToLoad) {
-        self.onAdFailedToLoad(@{ @"error": @{ @"message": [error localizedDescription] } });
+        // code + domain (GADErrorCode, "com.google.admob") like Android: the message alone is
+        // localized and cannot tell a no-fill from a network failure.
+        self.onAdFailedToLoad(@{ @"error": @{
+            @"message": [error localizedDescription] ?: @"",
+            @"code": @(error.code),
+            @"domain": error.domain ?: @""
+        } });
     }
 }
 
@@ -761,18 +839,16 @@ BOOL nonPersonalizedAds;
 }
 - (void)didFailToReceiveAdWithError:(nonnull NSError *)error{
     isLoading = FALSE;
+    [CacheManager.sharedInstance detachAdListener:adRepo listener:self];
 
     if (self.onAdFailedToLoad) {
-        self.onAdFailedToLoad(@{ @"error": @{ @"message": [error localizedDescription] } });
+        // code + domain (GADErrorCode, "com.google.admob") like Android: the message alone is
+        // localized and cannot tell a no-fill from a network failure.
+        self.onAdFailedToLoad(@{ @"error": @{
+            @"message": [error localizedDescription] ?: @"",
+            @"code": @(error.code),
+            @"domain": error.domain ?: @""
+        } });
     }
-
-      if (!isWait4Retry) {
-          isWait4Retry = true;
-          __weak typeof(self) weakSelf = self;
-          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((refreshingInterval.intValue/1000) * NSEC_PER_SEC)),dispatch_get_main_queue(), ^{
-              [weakSelf loadAd];
-          });
-      }
-
 }
 @end

@@ -1,3 +1,5 @@
+# No longer maintained. Use https://github.com/invertase/react-native-google-mobile-ads
+
 <div align="center">
 <img src="https://i.imgur.com/4DZhFR2.png" ></img>
 </div>

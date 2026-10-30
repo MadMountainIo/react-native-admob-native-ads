@@ -3,17 +3,30 @@
 /* eslint-disable react/state-in-constructor */
 import React, { Component } from 'react';
 import {
-    findNodeHandle,
     Platform,
-    requireNativeComponent,
-    UIManager,
 } from 'react-native';
+import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
 
 import { defaultAd, NativeAdContext } from './context';
 
 import { AdOptions } from './utils';
 
 import Wrapper from './Wrapper';
+import { RNGADNativeView } from './RNGADNativeView';
+
+// Komendy po refie (dispatchCommand na shadow node) zamiast findNodeHandle + UIManager po tagu:
+// findShadowNodeByTag_DEPRECATED przechodzi cale drzewo i crashuje (GAZETKOWO-MOBILE-26V).
+const NativeAdCommands = codegenNativeCommands({
+    supportedCommands: ['loadAd', 'recordImpression', 'triggerClick'],
+});
+
+const dispatchNativeAdCommand = (ref, commandName) => {
+    if (!ref) {
+        return;
+    }
+
+    NativeAdCommands[commandName](ref);
+};
 
 const testNativeAd = {
     headline: 'Test Ad: Lorem ipsum dolor ',
@@ -102,9 +115,13 @@ export class NativeAdView extends Component {
       }
   };
 
-  _onAdLefApplication = (event) => {
-      if (this.props.onAdLeftApplication)
-          this.props.onAdLeftApplication(event.nativeEvent);
+  _onOmidStatus = (event) => {
+      if (this.props.onOmidStatus) this.props.onOmidStatus(event.nativeEvent);
+  };
+
+  _onAdLeftApplication = (event) => {
+    if (this.props.onAdLeftApplication)
+      this.props.onAdLeftApplication(event.nativeEvent);
   };
 
   updateAd() {
@@ -136,29 +153,15 @@ export class NativeAdView extends Component {
   };
 
   loadAd = () => {
-      UIManager.dispatchViewManagerCommand(
-          findNodeHandle(this.nativeAdRef),
-          UIManager.getViewManagerConfig('RNGADNativeView').Commands.loadAd,
-          undefined
-      );
+      dispatchNativeAdCommand(this.nativeAdRef, 'loadAd');
   };
 
   recordImpression = () => {
-    if (Platform.OS !== 'ios') {
-        UIManager.dispatchViewManagerCommand(
-            findNodeHandle(this.nativeAdRef),
-            UIManager.getViewManagerConfig('RNGADNativeView').Commands.recordImpression,
-            undefined,
-        );
-    }
+    dispatchNativeAdCommand(this.nativeAdRef, 'recordImpression');
   };
 
   triggerClick = () => {
-      UIManager.dispatchViewManagerCommand(
-          findNodeHandle(this.nativeAdRef),
-          UIManager.getViewManagerConfig('RNGADNativeView').Commands.triggerClick,
-          undefined
-      );
+      dispatchNativeAdCommand(this.nativeAdRef, 'triggerClick');
   };
 
   render() {
@@ -173,10 +176,11 @@ export class NativeAdView extends Component {
               onAdLoaded={this._onAdLoaded}
               onAdFailedToLoad={this._onAdFailedToLoad}
               onAdClicked={this._onAdClicked}
-              onAdLeftApplication={this._onAdLefApplication}
+              onAdLeftApplication={this._onAdLeftApplication}
               onAdOpened={this._onAdOpened}
               onAdClosed={this._onAdClosed}
               onAdImpression={this._onAdImpression}
+              onOmidStatus={this._onOmidStatus}
               style={this.props.style}
               mediaAspectRatio={
                   AdOptions.mediaAspectRatio[this.props.mediaAspectRatio]
@@ -220,7 +224,5 @@ NativeAdView.defaultProps = {
 };
 
 NativeAdView.simulatorId = 'SIMULATOR';
-
-const RNGADNativeView = requireNativeComponent("RNGADNativeView");
 
 export default NativeAdView;

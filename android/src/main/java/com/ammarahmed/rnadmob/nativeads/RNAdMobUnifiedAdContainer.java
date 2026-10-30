@@ -29,6 +29,15 @@ public class RNAdMobUnifiedAdContainer {
         references = 0;
     }
 
+    void destroy() {
+        if (unifiedNativeAd != null) {
+            unifiedNativeAd.destroy();
+        }
+        if (unifiedCustomNativeAd != null) {
+            unifiedCustomNativeAd.destroy();
+        }
+    }
+
 }
 
 class RNAdMobUnifiedAdComparator implements Comparator<RNAdMobUnifiedAdContainer> {

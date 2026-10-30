@@ -32,6 +32,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     public static final String EVENT_AD_LEFT_APPLICATION = "onAdLeftApplication";
     public static final String EVENT_NATIVE_AD_LOADED = "onNativeAdLoaded";
     public static final String EVENT_CUSTOM_FORMAT_AD_LOADED = "onCustomFormatAdLoaded";
+    public static final String EVENT_OMID_STATUS = "onOmidStatus";
     public static final String PROP_DELAY_AD_LOAD = "delayAdLoad";
     public static final String PROP_TEST_DEVICES = "testDevices";
     public static final String PROP_AD_UNIT_ID = "adUnitID";
@@ -74,6 +75,7 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
                 EVENT_AD_LEFT_APPLICATION,
                 EVENT_NATIVE_AD_LOADED,
                 EVENT_CUSTOM_FORMAT_AD_LOADED,
+                EVENT_OMID_STATUS,
         };
         for (String event : events) {
             builder.put(event, MapBuilder.of("registrationName", event));
@@ -111,6 +113,31 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
 
     @Override
     public void receiveCommand(RNAdmobNativeView nativeAdWrapper, int commandId, @Nullable ReadableArray args) {
+        dispatchCommand(nativeAdWrapper, commandId);
+    }
+
+    @Override
+    public void receiveCommand(RNAdmobNativeView nativeAdWrapper, String commandId, @Nullable ReadableArray args) {
+        if (commandId == null) {
+            return;
+        }
+
+        switch (commandId) {
+            case "loadAd":
+                nativeAdWrapper.loadAd();
+                break;
+            case "recordImpression":
+                nativeAdWrapper.recordImpression();
+                break;
+            case "triggerClick":
+                nativeAdWrapper.triggerClick();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void dispatchCommand(RNAdmobNativeView nativeAdWrapper, int commandId) {
         switch (commandId) {
             case COMMAND_LOAD_AD:
                 nativeAdWrapper.loadAd();
@@ -120,6 +147,8 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
                 break;
             case COMMAND_TRIGGER_CLICK:
                 nativeAdWrapper.triggerClick();
+                break;
+            default:
                 break;
         }
     }
@@ -235,7 +264,10 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
     }
 
     @ReactProp(name = PROP_CUSTOM_TEMPLATE_IDS)
-    public void setPropCustomTemplateIds(final RNAdmobNativeView nativeAdWrapper, final ReadableArray customTemplateIdsString) {
+    public void setPropCustomTemplateIds(final RNAdmobNativeView nativeAdWrapper, @Nullable final ReadableArray customTemplateIdsString) {
+        if (customTemplateIdsString == null) {
+            return;
+        }
         ReadableNativeArray nativeArray = (ReadableNativeArray) customTemplateIdsString;
         ArrayList<Object> list = nativeArray.toArrayList();
         String[] customTemplateIdsStringArray = list.toArray(new String[list.size()]);
@@ -255,6 +287,11 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
         nativeAdWrapper.setAdRepository(repo);
     }
 
+    @ReactProp(name = "enableSwipeGestureOptions")
+    public void setEnableSwipeGestureOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
+        nativeAdWrapper.setSwipeGestureOptions(options.getInt("swipeGestureDirection"), options.hasKey("tapsAllowed") && options.getBoolean("tapsAllowed"));
+    }
+
     @ReactProp(name = PROP_REFRESH_INTERVAL)
     public void setRefreshInterval(final RNAdmobNativeView nativeAdWrapper, final int interval) {
         nativeAdWrapper.setAdRefreshInterval(interval);
@@ -270,8 +307,24 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
         if (nativeAdWrapper.nativeAd != null){
             if (nativeAdWrapper.unifiedNativeAdContainer != null){
                 nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
+                if (isOrphanedRepositoryAd(nativeAdWrapper)) {
+                    nativeAdWrapper.nativeAd.destroy();
+                }
+            }
+        }
+        // Custom-format ads were never released here, so their OMID session stayed open for the
+        // process lifetime and the IAB sessionFinish event never fired. Mirrors the branch above:
+        // an ad handed out by a repository is shared, so only the reference count may drop.
+        if (nativeAdWrapper.customFormatAd != null){
+            if (nativeAdWrapper.unifiedNativeAdContainer != null){
+                if (nativeAdWrapper.nativeAd == null){
+                    nativeAdWrapper.unifiedNativeAdContainer.references -= 1;
+                    if (isOrphanedRepositoryAd(nativeAdWrapper)) {
+                        nativeAdWrapper.customFormatAd.destroy();
+                    }
+                }
             } else{
-                nativeAdWrapper.nativeAdView.destroy();
+                nativeAdWrapper.customFormatAd.destroy();
             }
         }
         if (nativeAdWrapper.nativeAdView != null){
@@ -279,6 +332,11 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
             nativeAdWrapper.nativeAdView.destroy();
             nativeAdWrapper.removeAllViews();
         }
+    }
+
+    private static boolean isOrphanedRepositoryAd(RNAdmobNativeView nativeAdWrapper) {
+        return nativeAdWrapper.unifiedNativeAdContainer.references <= 0
+                && !CacheManager.instance.isRegistered(nativeAdWrapper.getAdRepo());
     }
 
 

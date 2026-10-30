@@ -202,6 +202,10 @@ type AdRepositoryConfig = {
   requestNonPersonalizedAdsOnly?: boolean;
   /** After how long should ads in this repository expire after being loaded in milliseconds. Default is `3600000`.*/
   expirationPeriod?: number;
+  /** How many times a failed load is retried before the repository gives up. Default is `10`. */
+  totalRetryCount?: number;
+  /** Delay between the retries in milliseconds. Default is `3000`. */
+  retryDelay?: number;
   /** Set this to true if you are using mediation. */
   mediationEnabled?: boolean;
   videoOptions?: VideoOptions;
@@ -210,6 +214,8 @@ type AdRepositoryConfig = {
   adChoicesPlacement?: "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | number;
   mediaAspectRatio?: "any" | "landscape" | "portrait" | "square" | "unknown" | number;
   customTemplateIds?: Array<string>;
+  swipeGestureDirection?: "right" | "left" | "up" | "down";
+  tapsAllowed?: boolean;
 };
 
 type ImagePropsWithOptionalSource = Omit<ImageProps, 'source'> &
@@ -301,6 +307,10 @@ type NativeAdViewProps = {
     videoOptions?: VideoOptions;
     mediationOptions?: MediationOptions;
     targetingOptions?: TargetingOptions;
+    enableSwipeGestureOptions?: {
+      tapsAllowed?: boolean;
+      swipeGestureDirection?: "right" | "left" | "up" | "down";
+    };
 
     testDevices?: Array<string>;
     onAdOpened?: () => void;
@@ -311,8 +321,21 @@ type NativeAdViewProps = {
     onAdLoaded?: () => void;
     onNativeAdLoaded?: (event: NativeAd) => void;
     onCustomFormatAdLoaded?: (event: CustomFormatAd) => void;
-    onAdFailedToLoad?: (error: { message: string }) => void;
+    onAdFailedToLoad?: (error: { message: string; code?: number; domain?: string }) => void;
     onAdCustomClick?: (event: CustomFormatAd) => void;
+    /**
+     * Open Measurement (OMID) registration of a custom-format ad: `started`, `start_failed`,
+     * `no_measurement` (no OM partner on the format), `error`, and on Android `view_updated` when the
+     * running session is pointed at the view again after a re-attach.
+     */
+    onOmidStatus?: (event: OmidStatusEvent) => void;
+};
+
+export type OmidStatusEvent = {
+    status: 'started' | 'start_failed' | 'no_measurement' | 'view_updated' | 'error';
+    trigger: string;
+    attached: boolean;
+    detail?: string;
 };
 
 type SimpleViewProps = {
@@ -440,6 +463,39 @@ declare module "react-native-admob-native-ads" {
          * Check if there is ad in a repository.
          */
         hasAd: (name: string) => Promise<boolean>;
+    /**
+     * When using Repositories to load ads, events are not recieved on the ad itself
+     * on android. If you want to track clicks and impressions you can do this using below
+     * events for each repository on android.
+     *
+     * Android only.
+     * @param repo
+     * @param eventName
+     * @param listener
+     * @returns
+     */
+    subscribe: (
+      repo: string,
+      eventName:
+        | "onAdPreloadLoaded"
+        | "onAdPreloadError"
+        | "onAdPreloadOpen"
+        | "onAdPreloadClosed"
+        | "onAdPreloadClicked"
+        | "onAdPreloadImpression",
+      listener: (event: {
+        adUnitId: string;
+        repo: string;
+        error?: {
+          message: string;
+          code: number;
+          domain: string;
+        };
+      }) => void
+    ) => EmitterSubscription;
+
+    openAdInspector: () => void;
+    openDebugMenu: (adUnitId: string) => void;
     };
 
     export const AdOptions: options;
@@ -465,33 +521,6 @@ declare module "react-native-admob-native-ads" {
      */
     export function PriceView(props: TextProps): JSX.Element;
 
-    /**
-     * Many times, the ad recieved will be from the Google Playstore or AppStore for iOS.
-     * In that case, you can show the store name using this view.
-     */
-    hasAd: (name: string) => Promise<boolean>;
-    /**
-     * When using Repositories to load ads, events are not recieved on the ad itself
-     * on android. If you want to track clicks and impressions you can do this using below
-     * events for each repository on android.
-     *
-     * Android only.
-     * @param repo
-     * @param eventName
-     * @param listener
-     * @returns
-     */
-    subscribe: (
-      repo: string,
-      eventName:
-        | "onAdPreloadLoaded"
-        | "onAdPreloadError"
-        | "onAdPreloadOpen"
-        | "onAdPreloadClosed"
-        | "onAdPreloadClicked"
-        | "onAdPreloadImpression",
-      listener
-    ) => EmitterSubscription;
 
     /**
      * If you want to explicitly show only Images and no video etc, use ImageView.
