@@ -35,6 +35,20 @@ RCT_EXPORT_METHOD(hasAd:(NSString *)repo resolver:(RCTPromiseResolveBlock)resolv
     });
 }
 
+RCT_EXPORT_METHOD(openAdInspector){
+    [[GADMobileAds sharedInstance] presentAdInspectorFromViewController:RCTSharedApplication().delegate.window.rootViewController completionHandler:nil];
+}
+
+
+RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
+    GADDebugOptionsViewController *debugOptionsViewController =
+    [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnit];
+    [RCTSharedApplication().delegate.window.rootViewController
+     presentViewController:debugOptionsViewController
+     animated:YES
+     completion:nil];
+}
+
 RCT_EXPORT_METHOD(unRegisterRepository:(NSString *) id resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject){
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -50,7 +64,7 @@ RCT_EXPORT_METHOD(resetCache:resolver:(RCTPromiseResolveBlock)resolve
 
 
 RCT_EXPORT_METHOD(setRequestConfiguration:(NSDictionary *)config resolver:(RCTPromiseResolveBlock)resolve
-    rejecter:(RCTPromiseRejectBlock)reject)
+                  rejecter:(RCTPromiseRejectBlock)reject)
 {
     if ([[config allKeys] containsObject:@"maxAdContentRating"]) {
         NSString *rating = [config valueForKey:@"maxAdContentRating"];
@@ -66,29 +80,29 @@ RCT_EXPORT_METHOD(setRequestConfiguration:(NSDictionary *)config resolver:(RCTPr
             [[[GADMobileAds sharedInstance] requestConfiguration] setMaxAdContentRating:NULL];
         }
     };
-
+    
     if ([[config allKeys] containsObject:@"tagForChildDirectedTreatment"]) {
         NSNumber *tag = [config valueForKey:@"tagForChildDirectedTreatment"];
-        [[[GADMobileAds sharedInstance] requestConfiguration] setTagForChildDirectedTreatment:[NSNumber numberWithBool:tag.boolValue]];
+        [[[GADMobileAds sharedInstance] requestConfiguration] setTagForChildDirectedTreatment:tag.boolValue ? @YES : @NO];
     };
-
+    
     if ([[config allKeys] containsObject:@"tagForUnderAgeConsent"]) {
         NSNumber *tagC = [config valueForKey:@"tagForUnderAgeConsent"];
-        [[[GADMobileAds sharedInstance] requestConfiguration] setTagForChildDirectedTreatment:[NSNumber numberWithBool:tagC.boolValue]];
+        [[[GADMobileAds sharedInstance] requestConfiguration] setTagForUnderAgeOfConsent:tagC.boolValue ? @YES : @NO];
     };
-
+    
     if ([[config allKeys] containsObject:@"testDeviceIds"]) {
         NSArray *testDevices = RNAdMobProcessTestDevices([config valueForKey:@"testDeviceIds"], @"SIMULATOR");
         [[[GADMobileAds sharedInstance] requestConfiguration] setTestDeviceIdentifiers:testDevices];
     };
-
+    
     if ([[config allKeys] containsObject:@"trackingAuthorized"]) {
         NSNumber *trackingAuthorized = [config valueForKey:@"trackingAuthorized"];
-        #ifdef MEDIATION_FACEBOOK
+#ifdef MEDIATION_FACEBOOK
         [FBAdSettings setAdvertiserTrackingEnabled:trackingAuthorized];
-        #endif
+#endif
     };
-
+    
     GADMobileAds *ads = [GADMobileAds sharedInstance];
     [ads startWithCompletionHandler:^(GADInitializationStatus *status) {
         NSDictionary *adapterStatuses = [status adapterStatusesByClassName];

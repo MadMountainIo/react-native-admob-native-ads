@@ -4,7 +4,6 @@
 import React, { Component } from 'react';
 import {
     Platform,
-    requireNativeComponent,
 } from 'react-native';
 import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
 
@@ -13,6 +12,7 @@ import { defaultAd, NativeAdContext } from './context';
 import { AdOptions } from './utils';
 
 import Wrapper from './Wrapper';
+import { RNGADNativeView } from './RNGADNativeView';
 
 // Komendy po refie (dispatchCommand na shadow node) zamiast findNodeHandle + UIManager po tagu:
 // findShadowNodeByTag_DEPRECATED przechodzi cale drzewo i crashuje (GAZETKOWO-MOBILE-26V).
@@ -119,9 +119,9 @@ export class NativeAdView extends Component {
       if (this.props.onOmidStatus) this.props.onOmidStatus(event.nativeEvent);
   };
 
-  _onAdLefApplication = (event) => {
-      if (this.props.onAdLeftApplication)
-          this.props.onAdLeftApplication(event.nativeEvent);
+  _onAdLeftApplication = (event) => {
+    if (this.props.onAdLeftApplication)
+      this.props.onAdLeftApplication(event.nativeEvent);
   };
 
   updateAd() {
@@ -176,7 +176,7 @@ export class NativeAdView extends Component {
               onAdLoaded={this._onAdLoaded}
               onAdFailedToLoad={this._onAdFailedToLoad}
               onAdClicked={this._onAdClicked}
-              onAdLeftApplication={this._onAdLefApplication}
+              onAdLeftApplication={this._onAdLeftApplication}
               onAdOpened={this._onAdOpened}
               onAdClosed={this._onAdClosed}
               onAdImpression={this._onAdImpression}
@@ -224,7 +224,5 @@ NativeAdView.defaultProps = {
 };
 
 NativeAdView.simulatorId = 'SIMULATOR';
-
-const RNGADNativeView = requireNativeComponent("RNGADNativeView");
 
 export default NativeAdView;

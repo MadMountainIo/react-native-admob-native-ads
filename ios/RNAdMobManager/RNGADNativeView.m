@@ -43,7 +43,7 @@ BOOL isWait4Retry = FALSE;
 
 GADNativeAdViewAdOptions *adPlacementOptions;
 GADNativeAdMediaAdLoaderOptions *adMediaOptions;
-
+GADNativeAdCustomClickGestureOptions *clickGestureOptions;
 GAMRequest *adRequest;
 GADVideoOptions *adVideoOptions;
 
@@ -89,6 +89,29 @@ BOOL nonPersonalizedAds;
 
 - (void)setCustomTemplateIds:(NSArray *)customTemplateIds {
     _customTemplateIds = customTemplateIds;
+}
+
+- (void) setEnableSwipeGestureOptions:(NSDictionary *)enableSwipeGestureOptions {
+        
+    clickGestureOptions = [[GADNativeAdCustomClickGestureOptions alloc] initWithSwipeGestureDirection:UISwipeGestureRecognizerDirectionUp tapsAllowed:false];
+    
+    if ([enableSwipeGestureOptions valueForKey:@"swipeGestureDirection"]) {
+        int direction = ((NSNumber *)[enableSwipeGestureOptions objectForKey:@"swipeGestureDirection"]).intValue;
+        
+        if (direction == 1) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionRight];
+        } else if (direction == 2) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionLeft];
+        } else if (direction == 4) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionUp];
+        } else if (direction == 8) {
+            [clickGestureOptions setSwipeGestureDirection:UISwipeGestureRecognizerDirectionDown];
+        }
+    }
+    
+    if ([enableSwipeGestureOptions valueForKey:@"tapsAllowed"]) {
+        [clickGestureOptions setTapsAllowed:[[enableSwipeGestureOptions valueForKey:@"tapsAllowed"] boolValue]];
+    }
 }
 
 - (void)setMediationOptions:(NSDictionary *)mediationOptions {
@@ -323,7 +346,8 @@ BOOL nonPersonalizedAds;
             rnMediaView = (RNGADMediaView *) viewRegistry[mediaview];
 
             if (rnMediaView != nil) {
-                [self setMediaView:(GADMediaView *) rnMediaView.subviews.firstObject];
+                [self setMediaView:(GADMediaView *) rnMediaView];
+                
                 if (self.nativeAd != nil) {
                     [self.mediaView setMediaContent:self.nativeAd.mediaContent];
                    [self reloadAdInView:self.nativeAd isMedia:YES];
@@ -499,10 +523,17 @@ BOOL nonPersonalizedAds;
 - (void) requestAd{
     if (isLoading == TRUE) return;
     isLoading = TRUE;
+    
+    NSMutableArray<GADAdLoaderOptions *>* options = [NSMutableArray arrayWithArray:@[adMediaOptions,adVideoOptions,adPlacementOptions]];
+    
+    if (clickGestureOptions) {
+        [options addObject:clickGestureOptions];
+    }
+    
     self.adLoader = [[GADAdLoader alloc] initWithAdUnitID:adUnitId
                                        rootViewController:self.reactViewController
                                                   adTypes:@[ GADAdLoaderAdTypeNative, GADAdLoaderAdTypeCustomNative ]
-                                                  options:@[adMediaOptions,adPlacementOptions,adVideoOptions]];
+                                                  options:options];
 
 
     self.adLoader.delegate = self;
@@ -545,17 +576,19 @@ BOOL nonPersonalizedAds;
     nativeAd.delegate = self;
 
      if (rnMediaView != nil) {
-         [self setMediaView:rnMediaView.subviews.firstObject];
+         [self setMediaView: rnMediaView];
          if (nativeAd.mediaContent.videoController != nil) {
              nativeAd.mediaContent.videoController.delegate = rnMediaView.self;
          }
      }
-
+    
      [self setNativeAd:nativeAd];
 
      if (self.mediaView != nil) {
          [self.mediaView setMediaContent:nativeAd.mediaContent];
      }
+    
+     [self setAdChoicesPlacement:adChoicesPlace];
 
      if (nativeAd != NULL) {
          NSMutableDictionary *dic = [NSMutableDictionary dictionary];

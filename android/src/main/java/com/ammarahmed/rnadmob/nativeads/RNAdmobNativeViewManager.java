@@ -287,6 +287,11 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
         nativeAdWrapper.setAdRepository(repo);
     }
 
+    @ReactProp(name = "enableSwipeGestureOptions")
+    public void setEnableSwipeGestureOptions(final RNAdmobNativeView nativeAdWrapper, final ReadableMap options) {
+        nativeAdWrapper.setSwipeGestureOptions(options.getInt("swipeGestureDirection"), options.hasKey("tapsAllowed") && options.getBoolean("tapsAllowed"));
+    }
+
     @ReactProp(name = PROP_REFRESH_INTERVAL)
     public void setRefreshInterval(final RNAdmobNativeView nativeAdWrapper, final int interval) {
         nativeAdWrapper.setAdRefreshInterval(interval);
@@ -305,8 +310,6 @@ public class RNAdmobNativeViewManager extends ViewGroupManager<RNAdmobNativeView
                 if (isOrphanedRepositoryAd(nativeAdWrapper)) {
                     nativeAdWrapper.nativeAd.destroy();
                 }
-            } else{
-                nativeAdWrapper.nativeAdView.destroy();
             }
         }
         // Custom-format ads were never released here, so their OMID session stayed open for the
