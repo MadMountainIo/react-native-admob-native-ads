@@ -2,6 +2,7 @@ package com.ammarahmed.rnadmob.nativeads;
 
 import android.content.Context;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -10,13 +11,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.CatalystInstance;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdLoader;
 import com.google.android.gms.ads.LoadAdError;
@@ -53,9 +52,9 @@ public class RNAdmobNativeView extends LinearLayout {
     AdLoader adLoader;
     RNAdmobMediaView mediaView;
     RNAdMobUnifiedAdContainer unifiedNativeAdContainer;
-    CatalystInstance mCatalystInstance;
     private int mediaAspectRatio = 1;
     private boolean loadingAd = false;
+    private boolean omidStarted = false;
     private Runnable retryRunnable;
     private String adRepo;
     private int adChoicesPlacement = 1;
@@ -145,6 +144,7 @@ public class RNAdmobNativeView extends LinearLayout {
 
             if (nativeCustomFormatAd != null) {
                 customFormatAd = nativeCustomFormatAd;
+                omidStarted = false;
                 setNativeAd();
             }
 
@@ -164,7 +164,6 @@ public class RNAdmobNativeView extends LinearLayout {
         mContext = context;
         createView(context);
         handler = new Handler();
-        mCatalystInstance = mContext.getCatalystInstance();
         setId(UUID.randomUUID().hashCode() + this.getId());
         videoOptions = new VideoOptions.Builder();
         adRequest = new AdManagerAdRequest.Builder();
@@ -312,16 +311,16 @@ public class RNAdmobNativeView extends LinearLayout {
                 }
             }
 
-            args.putBoolean("video", nativeAd.getMediaContent().hasVideoContent());
+            MediaContent mediaContent = nativeAd.getMediaContent();
+            args.putBoolean("video", mediaContent != null && mediaContent.hasVideoContent());
             float aspectRatio = 1.0f;
 
-            MediaContent mediaContent = nativeAd.getMediaContent();
-            if (nativeAdView.getMediaView() != null) {
+            if (mediaContent != null && nativeAdView.getMediaView() != null) {
                 nativeAdView.getMediaView().setMediaContent(mediaContent);
             }
 
             if (mediaContent != null && getDeclaredMethod(mediaContent, "getAspectRatio") != null) {
-                aspectRatio = nativeAd.getMediaContent().getAspectRatio();
+                aspectRatio = mediaContent.getAspectRatio();
                 if (aspectRatio > 0) {
                     args.putString("aspectRatio", String.valueOf(aspectRatio));
                 } else {
@@ -336,12 +335,18 @@ public class RNAdmobNativeView extends LinearLayout {
             sendEvent(RNAdmobNativeViewManager.EVENT_CUSTOM_FORMAT_AD_LOADED,args);
 
         } catch (Exception e) {
+            Log.e("RNAdmobNativeView", "setNativeAdToJS custom format failed", e);
         }
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        // The leaflet pager reparents its pages between recycled RecyclerView containers, so this
+        // view leaves and re-enters the window while the ad's OMID session is already running. A
+        // session left pointing at the detached view reports the ad as never viewable — point it
+        // back at this view on every attach.
+        registerOpenMeasurement("onAttachedToWindow");
     }
 
     @Override
@@ -351,12 +356,7 @@ public class RNAdmobNativeView extends LinearLayout {
     }
 
     public void sendEvent(String name, @Nullable WritableMap event) {
-
-        ReactContext reactContext = (ReactContext) mContext;
-        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-                getId(),
-                name,
-                event);
+        RNAdmobViewEventHelper.sendEvent(this, name, event);
     }
 
     public void loadAd() {
@@ -383,7 +383,15 @@ public class RNAdmobNativeView extends LinearLayout {
 
     public void triggerClick() {
         if (customFormatAd != null) {
-            customFormatAd.performClick("image");
+            // Prefer lowercase (legacy templates); fall back to GAM "Adinsert (Native 2)" asset name.
+            if (customFormatAd.getImage("image") != null || customFormatAd.getText("image") != null) {
+                customFormatAd.performClick("image");
+            } else if (customFormatAd.getImage("Image") != null || customFormatAd.getText("Image") != null) {
+                customFormatAd.performClick("Image");
+            } else if (customFormatAd.getAvailableAssetNames() != null
+                    && !customFormatAd.getAvailableAssetNames().isEmpty()) {
+                customFormatAd.performClick(customFormatAd.getAvailableAssetNames().iterator().next());
+            }
         }
     }
 
@@ -395,7 +403,6 @@ public class RNAdmobNativeView extends LinearLayout {
                 }
             } else {
 
-                CacheManager.instance.attachAdListener(adRepo, adListener);
                 if (CacheManager.instance.numberOfAds(adRepo) != 0) {
 
                     unifiedNativeAdContainer = CacheManager.instance.getNativeAd(adRepo);
@@ -413,12 +420,16 @@ public class RNAdmobNativeView extends LinearLayout {
                         } else {
                             customFormatAd = unifiedNativeAdContainer.unifiedCustomNativeAd;
                             if (customFormatAd != null) {
+                                omidStarted = false;
                                 setNativeAd();
                                 setNativeAdToJS(customFormatAd);
                             }
                         }
+                    } else {
+                        CacheManager.instance.attachAdListener(adRepo, adListener);
                     }
                 } else {
+                    CacheManager.instance.attachAdListener(adRepo, adListener);
                     if (!CacheManager.instance.isLoading(adRepo)) {
                         CacheManager.instance.requestAds(adRepo);
                     }
@@ -516,6 +527,67 @@ public class RNAdmobNativeView extends LinearLayout {
         adOptions.setMediaAspectRatio(mediaAspectRatio);
     }
 
+    /**
+     * Points the custom-format ad's OMID session at this view and starts it once.
+     *
+     * Called when the ad arrives (setNativeAd) and again on every onAttachedToWindow: the leaflet
+     * pager reparents pages between recycled containers, and a session left registered on the
+     * detached view keeps measuring nothing — the ad reports as never viewable however long the
+     * user looks at it. setView() may be called repeatedly (documented pattern for a changing
+     * container); start() starts a session at most once, so it is guarded by omidStarted, which is
+     * reset whenever a new customFormatAd is assigned.
+     *
+     * getDisplayOpenMeasurement() returns null when the custom format has no Open Measurement
+     * partner configured in GAM — that used to be skipped silently, which made "no OMID at all"
+     * indistinguishable from "OMID measuring a dead view" in the field. Both outcomes are logged,
+     * and reported to JS as onOmidStatus (app monitoring) — GMA exposes no further OMID events
+     * (impression, geometry) to the app.
+     */
+    private void registerOpenMeasurement(String trigger) {
+        if (nativeAdView == null || customFormatAd == null) {
+            return;
+        }
+        try {
+            NativeCustomFormatAd.DisplayOpenMeasurement measurement =
+                    customFormatAd.getDisplayOpenMeasurement();
+            if (measurement == null) {
+                Log.d("RNAdmobNativeView",
+                        "OMID " + trigger + ": getDisplayOpenMeasurement() == null"
+                                + " (no Open Measurement partner on this custom format?)");
+                sendOmidStatus(trigger, "no_measurement", null);
+                return;
+            }
+            measurement.setView(nativeAdView);
+            boolean wasStarted = omidStarted;
+            if (!omidStarted) {
+                omidStarted = measurement.start();
+            }
+            Log.d("RNAdmobNativeView", "OMID " + trigger + ": view registered, started="
+                    + omidStarted + " attachedToWindow=" + isAttachedToWindow());
+            sendOmidStatus(trigger,
+                    wasStarted ? "view_updated" : (omidStarted ? "started" : "start_failed"), null);
+        } catch (Exception e) {
+            Log.e("RNAdmobNativeView", "OMID " + trigger + " failed", e);
+            sendOmidStatus(trigger, "error", e.getClass().getSimpleName());
+        }
+    }
+
+    /** OMID registration outcome for JS (onOmidStatus); never throws into the ad flow. */
+    private void sendOmidStatus(String trigger, String status, @Nullable String detail) {
+        try {
+            WritableMap event = Arguments.createMap();
+            event.putString("status", status);
+            event.putString("trigger", trigger);
+            event.putBoolean("attached", isAttachedToWindow());
+            if (detail != null) {
+                event.putString("detail", detail);
+            }
+            sendEvent(RNAdmobNativeViewManager.EVENT_OMID_STATUS, event);
+        } catch (Exception e) {
+            Log.e("RNAdmobNativeView", "OMID status event failed", e);
+        }
+    }
+
     public void setNativeAd() {
         if (nativeAdView != null && nativeAd != null) {
             nativeAdView.setNativeAd(nativeAd);
@@ -531,10 +603,7 @@ public class RNAdmobNativeView extends LinearLayout {
         }
 
         if (nativeAdView != null && customFormatAd != null) {
-            if (customFormatAd.getDisplayOpenMeasurement() != null) {
-                customFormatAd.getDisplayOpenMeasurement().setView(nativeAdView);
-                customFormatAd.getDisplayOpenMeasurement().start();
-            }
+            registerOpenMeasurement("setNativeAd");
             if (mediaView != null && nativeAdView.getMediaView() != null) {
                 nativeAdView.getMediaView().setMediaContent(customFormatAd.getMediaContent());
 

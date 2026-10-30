@@ -335,6 +335,10 @@
 
 -(void)configTargetOptions:(NSDictionary *)config{
 
+    if ([config objectForKey:@"customTargeting"]){
+        [adRequest setCustomTargeting:(NSDictionary *)[config objectForKey:@"customTargeting"]];
+    }
+
     if ([config objectForKey:@"targets"]){
         NSArray<NSDictionary *>* targets = (NSArray<NSDictionary *> *)[config objectForKey:@"targets"];
         for (NSDictionary* target in targets){

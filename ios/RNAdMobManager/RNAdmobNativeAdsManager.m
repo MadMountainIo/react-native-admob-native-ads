@@ -16,24 +16,31 @@ RCT_EXPORT_MODULE();
 RCT_EXPORT_METHOD(registerRepository:(NSDictionary *)config resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject){
 
-    NSDictionary *result = [CacheManager.sharedInstance registerRepo:config];
-    BOOL isSuccess = ((NSNumber *)[result objectForKey:@"success"]).boolValue;
-    if (isSuccess){
-        NSString* repo = [result objectForKey:@"repo"];
-        [CacheManager.sharedInstance requestAds:repo];
-    }
-    resolve(result);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSDictionary *result = [CacheManager.sharedInstance registerRepo:config];
+        BOOL isSuccess = ((NSNumber *)[result objectForKey:@"success"]).boolValue;
+        if (isSuccess){
+            NSString* repo = [result objectForKey:@"repo"];
+            [CacheManager.sharedInstance requestAds:repo];
+        }
+        resolve(result);
+    });
 }
 
 RCT_EXPORT_METHOD(hasAd:(NSString *)repo resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject){
 
-    resolve([CacheManager.sharedInstance hasAd:repo]);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        resolve([CacheManager.sharedInstance hasAd:repo]);
+    });
 }
 
 RCT_EXPORT_METHOD(unRegisterRepository:(NSString *) id resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject){
-    [CacheManager.sharedInstance unRegisterRepo:id];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [CacheManager.sharedInstance unRegisterRepo:id];
+        resolve(nil);
+    });
 }
 
 RCT_EXPORT_METHOD(resetCache:resolver:(RCTPromiseResolveBlock)resolve

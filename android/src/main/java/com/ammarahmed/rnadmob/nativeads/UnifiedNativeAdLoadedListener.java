@@ -19,6 +19,8 @@ public class UnifiedNativeAdLoadedListener implements OnNativeAdLoadedListener, 
     List<RNAdMobUnifiedAdContainer> nativeAds;
     Context mContext;
     Integer totalAds;
+    boolean isDestroyed = false;
+    Runnable onAdAdded;
 
     public UnifiedNativeAdLoadedListener(String repo, List<RNAdMobUnifiedAdContainer> nativeAds, Integer tAds, Context context) {
         this.repo = repo;
@@ -29,6 +31,10 @@ public class UnifiedNativeAdLoadedListener implements OnNativeAdLoadedListener, 
 
     @Override
     public void onNativeAdLoaded(NativeAd nativeAd) {
+        if (isDestroyed) {
+            nativeAd.destroy();
+            return;
+        }
         if (this.nativeAds.size() > totalAds){
             // remove oldest ad if it is full
             RNAdMobUnifiedAdContainer toBeRemoved = null;
@@ -40,7 +46,7 @@ public class UnifiedNativeAdLoadedListener implements OnNativeAdLoadedListener, 
                 }
             }
             if (toBeRemoved !=  null){
-                toBeRemoved.unifiedNativeAd.destroy();
+                toBeRemoved.destroy();
                 this.nativeAds.remove(toBeRemoved);
             }
         }
@@ -48,10 +54,17 @@ public class UnifiedNativeAdLoadedListener implements OnNativeAdLoadedListener, 
         WritableMap args = Arguments.createMap();
         args.putInt(this.repo, this.nativeAds.size());
         EventEmitter.sendEvent((ReactContext) this.mContext, CacheManager.EVENT_AD_PRELOAD_LOADED, args);
+        if (onAdAdded != null) {
+            onAdAdded.run();
+        }
     }
 
     @Override
     public void onCustomFormatAdLoaded(@NonNull NativeCustomFormatAd nativeCustomFormatAd) {
+        if (isDestroyed) {
+            nativeCustomFormatAd.destroy();
+            return;
+        }
         if (this.nativeAds.size() > totalAds){
             // remove oldest ad if it is full
             RNAdMobUnifiedAdContainer toBeRemoved = null;
@@ -63,7 +76,7 @@ public class UnifiedNativeAdLoadedListener implements OnNativeAdLoadedListener, 
                 }
             }
             if (toBeRemoved !=  null){
-                toBeRemoved.unifiedNativeAd.destroy();
+                toBeRemoved.destroy();
                 this.nativeAds.remove(toBeRemoved);
             }
         }
@@ -71,6 +84,9 @@ public class UnifiedNativeAdLoadedListener implements OnNativeAdLoadedListener, 
         WritableMap args = Arguments.createMap();
         args.putInt(this.repo, this.nativeAds.size());
         EventEmitter.sendEvent((ReactContext) this.mContext, CacheManager.EVENT_AD_PRELOAD_LOADED, args);
+        if (onAdAdded != null) {
+            onAdAdded.run();
+        }
     }
 
 

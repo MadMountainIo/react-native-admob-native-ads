@@ -12,6 +12,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableNativeArray;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.AdRequest;
@@ -67,7 +68,16 @@ public class RNAdmobNativeAdsManager extends ReactContextBaseJavaModule {
         }
 
         if (config.hasKey("testDeviceIds")) {
-            configuration.setTestDeviceIds(Arguments.toList(config.getArray("testDeviceIds")));
+            List<Object> rawTestDeviceIds = Arguments.toList(config.getArray("testDeviceIds"));
+            List<String> testDeviceIds = new ArrayList<>();
+
+            for (Object rawTestDeviceId : rawTestDeviceIds) {
+                if (rawTestDeviceId != null) {
+                    testDeviceIds.add(rawTestDeviceId.toString());
+                }
+            }
+
+            configuration.setTestDeviceIds(testDeviceIds);
         }
 
         MobileAds.setRequestConfiguration(configuration.build());
@@ -92,12 +102,12 @@ public class RNAdmobNativeAdsManager extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void registerRepository(ReadableMap config, Promise promise){
-        CacheManager.instance.registerRepository(mContext, config, promise);
+        UiThreadUtil.runOnUiThread(() -> CacheManager.instance.registerRepository(mContext, config, promise));
     }
 
     @ReactMethod
     public void unRegisterRepository(String id){
-        CacheManager.instance.unRegisterRepository(id);
+        UiThreadUtil.runOnUiThread(() -> CacheManager.instance.unRegisterRepository(id));
     }
 
     @ReactMethod
@@ -107,7 +117,7 @@ public class RNAdmobNativeAdsManager extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void hasAd(String repository, Promise promise) {
-        promise.resolve(CacheManager.instance.hasAd(repository));
+        UiThreadUtil.runOnUiThread(() -> promise.resolve(CacheManager.instance.hasAd(repository)));
     }
 
 }

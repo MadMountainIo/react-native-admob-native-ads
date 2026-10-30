@@ -202,6 +202,10 @@ type AdRepositoryConfig = {
   requestNonPersonalizedAdsOnly?: boolean;
   /** After how long should ads in this repository expire after being loaded in milliseconds. Default is `3600000`.*/
   expirationPeriod?: number;
+  /** How many times a failed load is retried before the repository gives up. Default is `10`. */
+  totalRetryCount?: number;
+  /** Delay between the retries in milliseconds. Default is `3000`. */
+  retryDelay?: number;
   /** Set this to true if you are using mediation. */
   mediationEnabled?: boolean;
   videoOptions?: VideoOptions;
@@ -311,8 +315,21 @@ type NativeAdViewProps = {
     onAdLoaded?: () => void;
     onNativeAdLoaded?: (event: NativeAd) => void;
     onCustomFormatAdLoaded?: (event: CustomFormatAd) => void;
-    onAdFailedToLoad?: (error: { message: string }) => void;
+    onAdFailedToLoad?: (error: { message: string; code?: number; domain?: string }) => void;
     onAdCustomClick?: (event: CustomFormatAd) => void;
+    /**
+     * Open Measurement (OMID) registration of a custom-format ad: `started`, `start_failed`,
+     * `no_measurement` (no OM partner on the format), `error`, and on Android `view_updated` when the
+     * running session is pointed at the view again after a re-attach.
+     */
+    onOmidStatus?: (event: OmidStatusEvent) => void;
+};
+
+export type OmidStatusEvent = {
+    status: 'started' | 'start_failed' | 'no_measurement' | 'view_updated' | 'error';
+    trigger: string;
+    attached: boolean;
+    detail?: string;
 };
 
 type SimpleViewProps = {

@@ -76,7 +76,10 @@ public class CacheManager {
     }
 
     public void unRegisterRepository(String repo) {
-        repositoriesMap.remove(repo);
+        RNAdMobUnifiedAdQueueWrapper wrapper = repositoriesMap.remove(repo);
+        if (wrapper != null) {
+            wrapper.destroy();
+        }
     }
 
     public void resetCache() {

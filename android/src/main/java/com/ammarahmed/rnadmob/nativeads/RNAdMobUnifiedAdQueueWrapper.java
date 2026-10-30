@@ -34,6 +34,7 @@ public class RNAdMobUnifiedAdQueueWrapper {
     public int totalRetryCount = 10;
     public long retryDelay = 3000;
     private int retryCount = 0;
+    private boolean isDestroyed = false;
     public Boolean muted = true;
     public Boolean mediation = false;
     public List<RNAdMobUnifiedAdContainer> nativeAds;
@@ -91,9 +92,11 @@ public class RNAdMobUnifiedAdQueueWrapper {
                 if (retryCount >= totalRetryCount) {
                     WritableMap event = Arguments.createMap();
                     WritableMap error = Arguments.createMap();
-                    error.putString("message", "reach maximum retry");
-                    error.putInt("code", AdRequest.ERROR_CODE_INTERNAL_ERROR);
-                    error.putString("domain", "");
+                    // The SDK's own code and domain, not a generic internal error: with retries
+                    // off (totalRetryCount 0) every no-fill ends here and would read as a crash.
+                    error.putString("message", "reach maximum retry: " + adError.getMessage());
+                    error.putInt("code", adError.getCode());
+                    error.putString("domain", adError.getDomain());
                     event.putMap("error", error);
                     EventEmitter.sendEvent((ReactContext) mContext, CacheManager.EVENT_AD_PRELOAD_ERROR + ":" + name, event);
                     notifyOnAdsLoadFailed(adError);
@@ -221,6 +224,7 @@ public class RNAdMobUnifiedAdQueueWrapper {
 
         unifiedNativeAdLoadedListener = new UnifiedNativeAdLoadedListener(name, nativeAds,
                 totalAds, mContext);
+        unifiedNativeAdLoadedListener.onAdAdded = this::notifyOnAdsLoaded;
         AdLoader.Builder builder = new AdLoader.Builder(mContext, adUnitId);
         
         String[] customTemplateIds = new String[]{};
@@ -243,6 +247,9 @@ public class RNAdMobUnifiedAdQueueWrapper {
     }
 
     public void fillAds() {
+        if (isDestroyed) {
+            return;
+        }
         int require2fill = totalAds - nativeAds.size();
         if (require2fill <= 0 || isLoading()) {
             return;
@@ -277,7 +284,7 @@ public class RNAdMobUnifiedAdQueueWrapper {
             }
         }
         for (RNAdMobUnifiedAdContainer item : discardItems) {
-            item.unifiedNativeAd.destroy();
+            item.destroy();
             nativeAds.remove(item);
         }
 
@@ -288,6 +295,19 @@ public class RNAdMobUnifiedAdQueueWrapper {
         ad.showCount += 1;
         ad.references += 1;
         return ad;
+    }
+
+    public void destroy() {
+        isDestroyed = true;
+        handler.removeCallbacksAndMessages(null);
+        unifiedNativeAdLoadedListener.isDestroyed = true;
+        attachedAdListeners.clear();
+        for (RNAdMobUnifiedAdContainer item : new ArrayList<>(nativeAds)) {
+            if (item.references <= 0) {
+                item.destroy();
+                nativeAds.remove(item);
+            }
+        }
     }
 
     public Boolean isLoading() {
